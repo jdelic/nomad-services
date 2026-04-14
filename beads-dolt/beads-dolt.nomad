@@ -112,12 +112,10 @@ EOF
                     <<-EOS
                     until mysqladmin ping -h 127.0.0.1 -P 3306 --silent; do sleep 2; done
                     mysql -h 127.0.0.1 -P 3306 -u root -p"$ROOT_PASSWORD" <<SQL
-                        DROP DATABASE IF EXISTS beads;
                         DROP DATABASE IF EXISTS test;
-                        CREATE DATABASE IF EXISTS test;
-                        CREATE DATABASE IF EXISTS ssh_phone_agent;
+                        CREATE DATABASE IF NOT EXISTS test;
+                        CREATE DATABASE IF NOT EXISTS ssh_phone_agent;
 
-                        CREATE DATABASE IF NOT EXISTS beads;
                         CREATE USER IF NOT EXISTS 'beads'@'%' IDENTIFIED BY '${BEADS_PASSWORD}';
                         ALTER USER 'beads'@'%' IDENTIFIED BY '${BEADS_PASSWORD}';
                         GRANT ALL PRIVILEGES ON test.* TO 'beads'@'%';
