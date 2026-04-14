@@ -32,15 +32,6 @@ job "beads-dolt" {
             config {
                 image = "dolthub/dolt-sql-server:latest"
                 ports = ["mysql"]
-
-                mounts = [
-                    {
-                        type     = "bind"
-                        source   = "local/initdb"
-                        target   = "/docker-entrypoint-initdb.d"
-                        readonly = true
-                    }
-                ]
             }
 
             service {
