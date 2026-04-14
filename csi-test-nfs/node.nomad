@@ -17,7 +17,7 @@ job "node" {
                     "--type=node",
                     "--endpoint=${CSI_ENDPOINT}", # provided by csi_plugin{}
                     "--node-id=${attr.unique.hostname}",
-                    "--nfs-server=${NFS_ADDRESS}:/srv/nfs",
+                    "--nfs-server=${NFS_ADDRESS}",
                     "--log-level=DEBUG",
                 ]
                 # node plugins are always privileged to mount disks.
@@ -27,7 +27,7 @@ job "node" {
                 network_mode = "host"
             }
             template {
-                data        = "NFS_ADDRESS={{- range nomadService `nfs` }}{{ .Address }}{{ end -}}"
+                data        = "NFS_ADDRESS=192.168.121.1:/home/jonas/projects/maurus.net/nomad-volumes/"
                 destination = "local/nfs.addy"
                 env         = true
             }

@@ -20,7 +20,7 @@ job "controller" {
                     "--type=controller",
                     "--endpoint=${CSI_ENDPOINT}", # provided by csi_plugin{}
                     "--node-id=${attr.unique.hostname}",
-                    "--nfs-server=${NFS_ADDRESS}:/srv/nfs",
+                    "--nfs-server=${NFS_ADDRESS}",
                     "--log-level=DEBUG",
                 ]
                 privileged = true # this particular controller mounts NFS in itself

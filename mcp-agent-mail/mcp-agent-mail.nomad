@@ -7,7 +7,7 @@ variable "postgresql_password" {
 }
 
 job "mcp-agent-mail" {
-    datacenters = ["RZ19"]
+    datacenters = ["RZ19", "vagrant"]
     type        = "service"
 
     group "mcp-agent-mail" {

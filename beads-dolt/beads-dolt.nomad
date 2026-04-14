@@ -1,5 +1,5 @@
 job "beads-dolt" {
-    datacenters = ["RZ19"]
+    datacenters = ["RZ19", "vagrant"]
     type        = "service"
 
     group "db" {
