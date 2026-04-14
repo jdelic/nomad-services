@@ -51,7 +51,7 @@ job "beads-dolt" {
                     "smartstack:hostname:beads.maurus.net",
                     "smartstack:routing:port",
                     "smartstack:extport:33306",
-                    "smartstack:protocol:sni",
+                    "smartstack:protocol:tcp",
                 ]
 
                 check {
