@@ -32,6 +32,15 @@ job "beads-dolt" {
             config {
                 image = "dolthub/dolt-sql-server:latest"
                 ports = ["mysql"]
+
+                mounts = [
+                    {
+                        type     = "bind"
+                        source   = "local/initdb"
+                        target   = "/docker-entrypoint-initdb.d"
+                        readonly = true
+                    }
+                ]
             }
 
             service {
@@ -52,6 +61,15 @@ job "beads-dolt" {
                     interval = "10s"
                     timeout  = "2s"
                 }
+            }
+
+            template {
+                destination = "local/initdb/01-users.sql"
+                change_mode = "noop"
+
+                data = <<-EOF
+CREATE DATABASE IF NOT EXISTS test;
+EOF
             }
 
             template {
