@@ -70,7 +70,7 @@ job "beads-dolt" {
 
                 data = <<-EOF
 DOLT_ROOT_HOST=%
-DOLT_ROOT_PASSWORD={{ with nomadVar "nomad/jobs/beads-dolt/db/dolt" }}{{ .root_password }}{{ end }}
+DOLT_ROOT_PASSWORD={{ with nomadVar "nomad/jobs/beads-dolt/db" }}{{ .root_password }}{{ end }}
 EOF
             }
 
