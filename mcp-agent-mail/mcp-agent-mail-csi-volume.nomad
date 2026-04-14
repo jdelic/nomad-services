@@ -10,15 +10,15 @@ plugin_id = "csi.hetzner.cloud"
 capacity_min = "10G"
 
 capability {
-  access_mode     = "single-node-writer"
-  attachment_mode = "file-system"
+    access_mode     = "single-node-writer"
+    attachment_mode = "file-system"
 }
 
 mount_options {
-  fs_type     = "ext4"
-  mount_flags = ["discard", "defaults"]
+    fs_type     = "ext4"
+    mount_flags = ["discard", "defaults"]
 }
 
 secrets {
-  "encryption-passphrase" = "GMQQF0z2s2v1qBD0gDkzRlX6"
+    "encryption-passphrase" = "GMQQF0z2s2v1qBD0gDkzRlX6"
 }
