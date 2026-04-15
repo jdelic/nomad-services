@@ -1,3 +1,8 @@
+variable "domain" {
+    type    = string
+    default = "maurus.net"
+}
+
 job "beads-dolt" {
     datacenters = ["RZ19", "vagrant"]
     type        = "service"
@@ -48,7 +53,7 @@ job "beads-dolt" {
                 port = "mysql"
                 tags = [
                     "smartstack:external",
-                    "smartstack:hostname:beads.maurus.net",
+                    "smartstack:hostname:beads.${var.domain}",
                     "smartstack:routing:port",
                     "smartstack:extport:33306",
                     "smartstack:protocol:tcp",
