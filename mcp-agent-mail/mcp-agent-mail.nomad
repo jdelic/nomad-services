@@ -6,6 +6,11 @@ variable "postgresql_password" {
     type      = string
 }
 
+variable "domain" {
+    type    = string
+    default = "maurus.net"
+}
+
 job "mcp-agent-mail" {
     datacenters = ["RZ19", "vagrant"]
     type        = "service"
@@ -60,12 +65,12 @@ job "mcp-agent-mail" {
             driver = "docker"
 
             config {
-                image = "registry.maurus.net/agent-tools/mcp_agent_mail:2026.04.02"
+                image = "registry.${var.domain}/agent-tools/mcp_agent_mail:2026.04.15"
                 ports = ["http"]
 
                 auth {
-                    server_address = "registry.maurus.net"
-                    username       = "nomad-deploy@maurus.net"
+                    server_address = "registry.${var.domain}"
+                    username       = "nomad-deploy@${var.domain}"
                     password       = var.registry_password
                 }
                 #force_pull = true
@@ -191,7 +196,7 @@ job "mcp-agent-mail" {
                 port     = "http"
                 provider = "consul"
                 tags     = [
-                    "smartstack:hostname:mcp-mail.maurus.net",
+                    "smartstack:hostname:mcp-mail.${var.domain}",
                     "smartstack:protocol:https",
                     "smartstack:https-redirect",
                     "smartstack:mode:http",
