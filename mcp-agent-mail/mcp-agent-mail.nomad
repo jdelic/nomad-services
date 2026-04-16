@@ -65,7 +65,7 @@ job "mcp-agent-mail" {
             driver = "docker"
 
             config {
-                image = "registry.${var.domain}/agent-tools/mcp_agent_mail:2026.04.15-5"
+                image = "registry.${var.domain}/agent-tools/mcp_agent_mail:2026.04.16"
                 ports = ["http"]
 
                 auth {
@@ -150,7 +150,7 @@ job "mcp-agent-mail" {
                             location / {
                                 error_page 418 = @basic_auth_proxy;
 
-                                if ($http_authorization != "Bearer ${var.bearer_token}) {
+                                if ($http_authorization != "Bearer ${var.bearer_token}") {
                                     return 418;
                                 }
 
