@@ -2,6 +2,10 @@ variable "registry_password" {
     type = string
 }
 
+variable "bearer_token" {
+    type = string
+}
+
 variable "domain" {
     type    = string
     default = "maurus.net"
@@ -146,7 +150,7 @@ job "mcp-agent-mail" {
                             location / {
                                 error_page 418 = @basic_auth_proxy;
 
-                                if ($http_authorization != "Bearer 788611dd055fc4670a3e6e209129d2dd5584a1084c3b417e0d43782ed3f3936c") {
+                                if ($http_authorization != "Bearer ${var.bearer_token}) {
                                     return 418;
                                 }
 
