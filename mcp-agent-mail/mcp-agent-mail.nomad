@@ -41,6 +41,41 @@ job "mcp-agent-mail" {
             read_only       = false
         }
 
+        # we fix the permissions on cloud volumes so they work with actual block device volumes.
+        # On test systems where we run NFS with all_squash, anonuid=1000, anongid=1000, this is a
+        # noop.
+        task "fix-mailbox-perms" {
+            driver = "docker"
+
+            lifecycle {
+                hook = "prestart"
+            }
+
+            config {
+                image   = "alpine:3.20"
+                command = "sh"
+                args = [
+                    "-ec",
+                    <<-EOF
+                        mkdir -p /data/mailbox
+                        chown -R 10001:10001 /data/mailbox
+                        chmod 0750 /data/mailbox
+                    EOF
+                ]
+            }
+
+            volume_mount {
+                volume      = "mailbox"
+                destination = "/data/mailbox"
+                read_only   = false
+            }
+
+            resources {
+                cpu    = 50
+                memory = 64
+            }
+        }
+
         service {
             name     = "mcp-agent-mail"
             provider = "nomad"
