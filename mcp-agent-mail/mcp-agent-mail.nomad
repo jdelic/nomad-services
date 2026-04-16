@@ -33,7 +33,7 @@ job "mcp-agent-mail" {
 
         # Define a host volume named "mcp-agent-mail-data" on the Nomad client
         # for persistent archive storage.
-        volume "archive" {
+        volume "mailbox" {
             type            = "csi"
             source          = "mcp-agent-mail-data"
             access_mode     = "single-node-writer"
@@ -65,7 +65,7 @@ job "mcp-agent-mail" {
             driver = "docker"
 
             config {
-                image = "registry.${var.domain}/agent-tools/mcp_agent_mail:2026.04.15"
+                image = "registry.${var.domain}/agent-tools/mcp_agent_mail:2026.04.15-4"
                 ports = ["http"]
 
                 auth {
@@ -77,17 +77,20 @@ job "mcp-agent-mail" {
             }
 
             env {
-                #DATABASE_URL                       = "postgresql+asyncpg://mcp-agent-mail:${var.postgres_password}@192.168.55.1:5432/mcp-agent-mail"
+                #DATABASE_URL                       = "postgresql+asyncpg://mcp-agent-mail:${var.postgresql_password}@192.168.55.1:5432/mcp-agent-mail"
+                DATABASE_URL                       = "sqlite+aiosqlite:///data/mailbox/storage.sqlite3"
                 HTTP_HOST                          = "0.0.0.0"
                 HTTP_PORT                          = "8765"
-                STORAGE_ROOT                       = "/data/archive"
+                HTTP_BEARER_TOKEN                  = "788611dd055fc4670a3e6e209129d2dd5584a1084c3b417e0d43782ed3f3936c"
+                HTTP_RBAC_ENABLED                  = false
+                STORAGE_ROOT                       = "/data/mailbox"
                 TOOL_METRICS_EMIT_ENABLED          = "true"
                 TOOL_METRICS_EMIT_INTERVAL_SECONDS = "120"
             }
 
             volume_mount {
-                volume      = "archive"
-                destination = "/data/archive"
+                volume      = "mailbox"
+                destination = "/data/mailbox"
                 read_only   = false
             }
 
@@ -147,10 +150,27 @@ job "mcp-agent-mail" {
                             listen 8080;
 
                             location / {
+                                error_page 418 = @basic_auth_proxy;
+
+                                if ($http_authorization !~* "^Bearer[[:space:]]+[^[:space:]]+") {
+                                    return 418;
+                                }
+
+                                proxy_set_header Host $host;
+                                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                                proxy_set_header X-Forwarded-Proto $scheme;
+                                proxy_set_header X-Real-IP $remote_addr;
+
+                                proxy_pass http://app_upstream;
+                            }
+
+                            location @basic_auth_proxy {
+                                error_page 401 = @basic_auth_challenge;
+
                                 if ($http_authorization = "") {
-                                    add_header WWW-Authenticate 'Basic realm="mcp-agent-mail"' always;
                                     return 401;
                                 }
+
                                 auth_request /_auth;
 
                                 proxy_set_header Host $host;
@@ -159,6 +179,11 @@ job "mcp-agent-mail" {
                                 proxy_set_header X-Real-IP $remote_addr;
 
                                 proxy_pass http://app_upstream;
+                            }
+
+                            location @basic_auth_challenge {
+                                add_header WWW-Authenticate 'Basic realm="mcp-agent-mail"' always;
+                                return 401;
                             }
 
                             location = /_auth {
