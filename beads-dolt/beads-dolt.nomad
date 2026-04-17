@@ -129,7 +129,9 @@ EOF
                         GRANT ALL PRIVILEGES ON test.* TO 'beads'@'%';
                         GRANT ALL PRIVILEGES ON ssh_phone_agent.* TO 'beads'@'%';
                         GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_push TO 'beads'@'%';
+                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_pull TO 'beads'@'%';
                         GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_backup TO 'beads'@'%';
+                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_remote TO 'beads'@'%';
                     SQL
                     EOS
                 ]
