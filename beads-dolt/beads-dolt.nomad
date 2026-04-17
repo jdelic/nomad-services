@@ -57,6 +57,8 @@ job "beads-dolt" {
                     "smartstack:routing:port",
                     "smartstack:extport:33306",
                     "smartstack:protocol:tcp",
+                    "haproxy:backend:option:clitcpka",
+                    "haproxy:backend:option:srvtcpka",
                 ]
 
                 check {
@@ -109,6 +111,7 @@ EOF
 
             driver = "docker"
 
+            # https://www.dolthub.com/blog/2023-11-06-securing-procedures/
             config {
                 image   = "mysql:8.0"
                 command = "sh"
@@ -125,6 +128,8 @@ EOF
                         ALTER USER 'beads'@'%' IDENTIFIED BY '${BEADS_PASSWORD}';
                         GRANT ALL PRIVILEGES ON test.* TO 'beads'@'%';
                         GRANT ALL PRIVILEGES ON ssh_phone_agent.* TO 'beads'@'%';
+                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_push TO beads@'%';
+                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_backup TO beads@'%';
                     SQL
                     EOS
                 ]
