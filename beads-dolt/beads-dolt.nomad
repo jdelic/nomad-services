@@ -57,7 +57,7 @@ job "beads-dolt" {
                     "smartstack:routing:port",
                     "smartstack:extport:33306",
                     "smartstack:protocol:tcp",
-                    "haproxy:backend:option:clitcpka",
+                    "haproxy:frontend:option:clitcpka",
                     "haproxy:backend:option:srvtcpka",
                 ]
 
@@ -128,8 +128,8 @@ EOF
                         ALTER USER 'beads'@'%' IDENTIFIED BY '${BEADS_PASSWORD}';
                         GRANT ALL PRIVILEGES ON test.* TO 'beads'@'%';
                         GRANT ALL PRIVILEGES ON ssh_phone_agent.* TO 'beads'@'%';
-                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_push TO beads@'%';
-                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_backup TO beads@'%';
+                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_push TO 'beads'@'%';
+                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_backup TO 'beads'@'%';
                     SQL
                     EOS
                 ]
