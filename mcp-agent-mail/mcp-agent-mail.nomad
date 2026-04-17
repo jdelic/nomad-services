@@ -48,7 +48,8 @@ job "mcp-agent-mail" {
             driver = "docker"
 
             lifecycle {
-                hook = "prestart"
+                hook    = "prestart"
+                sidecar = false
             }
 
             config {
