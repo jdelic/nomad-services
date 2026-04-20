@@ -183,6 +183,10 @@ job "mcp-agent-mail" {
                         server {
                             listen 8080;
 
+                            location = / {
+                                return 302 /mail/$is_args$args;
+                            }
+
                             location / {
                                 error_page 418 = @basic_auth_proxy;
 
@@ -199,8 +203,9 @@ job "mcp-agent-mail" {
                             }
 
                             location @basic_auth_proxy {
+                                error_page 401 = @basic_auth_challenge;
+
                                 if ($http_authorization = "") {
-                                    add_header WWW-Authenticate 'Basic realm="mcp-agent-mail"' always;
                                     return 401;
                                 }
 
@@ -212,6 +217,11 @@ job "mcp-agent-mail" {
                                 proxy_set_header X-Real-IP $remote_addr;
 
                                 proxy_pass http://app_upstream;
+                            }
+
+                            location @basic_auth_challenge {
+                                add_header WWW-Authenticate 'Basic realm="mcp-agent-mail"' always;
+                                return 401;
                             }
 
                             location = /_auth {
