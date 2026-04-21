@@ -182,6 +182,8 @@ job "mcp-agent-mail" {
 
                         server {
                             listen 8080;
+                            absolute_redirect off;
+                            port_in_redirect off;
 
                             location = / {
                                 return 302 /mail/$is_args$args;
@@ -194,7 +196,7 @@ job "mcp-agent-mail" {
 
                                 proxy_set_header Host $host;
                                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                                proxy_set_header X-Forwarded-Proto $scheme;
+                                proxy_set_header X-Forwarded-Proto https;
                                 proxy_set_header X-Real-IP $remote_addr;
 
                                 proxy_pass http://app_upstream;
@@ -207,7 +209,7 @@ job "mcp-agent-mail" {
 
                                 proxy_set_header Host $host;
                                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                                proxy_set_header X-Forwarded-Proto $scheme;
+                                proxy_set_header X-Forwarded-Proto https;
                                 proxy_set_header X-Real-IP $remote_addr;
 
                                 proxy_pass http://app_upstream;
@@ -220,7 +222,7 @@ job "mcp-agent-mail" {
 
                                 proxy_set_header Host $host;
                                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                                proxy_set_header X-Forwarded-Proto $scheme;
+                                proxy_set_header X-Forwarded-Proto https;
                                 proxy_set_header X-Real-IP $remote_addr;
 
                                 proxy_pass http://app_upstream;
