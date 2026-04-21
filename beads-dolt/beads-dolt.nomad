@@ -44,6 +44,24 @@ job "beads-dolt" {
                         source   = "local/initdb"
                         target   = "/docker-entrypoint-initdb.d"
                         readonly = true
+                    },
+                    {
+                        type     = "bind"
+                        source   = "local/servercfg"
+                        target   = "/etc/dolt/servercfg.d"
+                        readonly = true
+                    },
+                    {
+                        type     = "bind"
+                        source   = "/etc/ssl/local/wildcard-combined.crt"
+                        target   = "/etc/ssl/certs/wildcard-combined.crt"
+                        readonly = true
+                    },
+                    {
+                        type     = "bind"
+                        source   = "/etc/ssl/private/wildcard.key"
+                        target   = "/etc/ssl/private/wildcard.key"
+                        readonly = true
                     }
                 ]
             }
@@ -76,6 +94,25 @@ job "beads-dolt" {
 
                 data = <<-EOF
 CREATE DATABASE IF NOT EXISTS test;
+EOF
+            }
+
+            template {
+                destination = "local/servercfg/config.yaml"
+                change_mode = "restart"
+
+                data = <<-EOF
+log_level: info
+listener:
+  host: 0.0.0.0
+  port: 3306
+  tls_cert: /etc/ssl/certs/wildcard-combined.crt
+  tls_key: /etc/ssl/private/wildcard.key
+  require_secure_transport: true
+data_dir: /var/lib/dolt
+cfg_dir: /var/lib/dolt/.doltcfg
+privilege_file: /var/lib/dolt/.doltcfg/privileges.db
+branch_control_file: /var/lib/dolt/.doltcfg/branch_control.db
 EOF
             }
 
@@ -118,8 +155,8 @@ EOF
                 args = [
                     "-ec",
                     <<-EOS
-                    until mysqladmin ping -h 127.0.0.1 -P 3306 --silent; do sleep 2; done
-                    mysql -h 127.0.0.1 -P 3306 -u root -p"$ROOT_PASSWORD" <<SQL
+                    until mysqladmin ping -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED --silent; do sleep 2; done
+                    mysql -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED -u root -p"$ROOT_PASSWORD" <<SQL
                         DROP DATABASE IF EXISTS test;
                         CREATE DATABASE IF NOT EXISTS test;
                         CREATE DATABASE IF NOT EXISTS ssh_phone_agent;
