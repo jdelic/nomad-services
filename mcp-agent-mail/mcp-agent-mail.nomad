@@ -187,11 +187,9 @@ job "mcp-agent-mail" {
                                 return 302 /mail/$is_args$args;
                             }
 
-                            location / {
-                                error_page 418 = @basic_auth_proxy;
-
+                            location = /api {
                                 if ($http_authorization != "Bearer ${var.bearer_token}") {
-                                    return 418;
+                                    return 401;
                                 }
 
                                 proxy_set_header Host $host;
@@ -202,12 +200,21 @@ job "mcp-agent-mail" {
                                 proxy_pass http://app_upstream;
                             }
 
-                            location @basic_auth_proxy {
-                                error_page 401 = @basic_auth_challenge;
-
-                                if ($http_authorization = "") {
+                            location ^~ /api/ {
+                                if ($http_authorization != "Bearer ${var.bearer_token}") {
                                     return 401;
                                 }
+
+                                proxy_set_header Host $host;
+                                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                                proxy_set_header X-Forwarded-Proto $scheme;
+                                proxy_set_header X-Real-IP $remote_addr;
+
+                                proxy_pass http://app_upstream;
+                            }
+
+                            location / {
+                                error_page 401 = @basic_auth_challenge;
 
                                 auth_request /_auth;
 
