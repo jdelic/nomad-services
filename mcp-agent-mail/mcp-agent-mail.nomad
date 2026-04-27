@@ -218,6 +218,10 @@ job "mcp-agent-mail" {
                             location / {
                                 error_page 401 = @basic_auth_challenge;
 
+                                if ($http_authorization !~* "^Basic[[:space:]]+.+$") {
+                                    return 401;
+                                }
+
                                 auth_request /_auth;
 
                                 proxy_set_header Host $host;
@@ -233,8 +237,15 @@ job "mcp-agent-mail" {
                                 return 401;
                             }
 
+                            location @auth_rejected {
+                                return 401;
+                            }
+
                             location = /_auth {
                                 internal;
+
+                                proxy_intercept_errors on;
+                                error_page 400 = @auth_rejected;
 
                                 proxy_pass http://authserver-int.service.consul:8999/checkpassword/;
                                 proxy_method POST;
