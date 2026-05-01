@@ -138,6 +138,12 @@ job "tuwunel" {
             read_only       = false
         }
 
+        volume "host-ca-bundle" {
+            type      = "host"
+            source    = "host-ca-bundle"
+            read_only = true
+        }
+
         task "init-data" {
             driver = "docker"
 
@@ -232,6 +238,12 @@ EOF
                 volume      = "tuwunel-data"
                 destination = "/data"
                 read_only   = false
+            }
+
+            volume_mount {
+                volume      = "host-ca-bundle"
+                destination = "/etc/ssl/certs/ca-certificates.crt"
+                read_only   = true
             }
 
             template {
