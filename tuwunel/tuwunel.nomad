@@ -205,11 +205,12 @@ EOF
             port     = "http"
             tags = [
                 "smartstack:hostname:${var.matrix_federation_hostname}",
-                "smartstack:protocol:https",
+                "smartstack:protocol:sni",
                 "smartstack:mode:http",
                 "smartstack:external",
                 "smartstack:routing:port",
                 "smartstack:extport:8448",
+                "smartstack:ssl-terminate"
             ]
 
             check {
