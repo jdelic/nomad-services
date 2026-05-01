@@ -39,6 +39,48 @@
 #     OpenID Connect issuer URL. For Authserver this is the /o2 endpoint.
 #     Example: https://auth.example.com/o2
 #
+
+variable "matrix_server_name" {
+    type        = string
+    description = "Matrix homeserver identity, e.g. example.com"
+}
+
+variable "matrix_client_hostname" {
+    type        = string
+    description = "Public hostname for Matrix client-server API traffic, e.g. matrix.example.com"
+}
+
+variable "matrix_client_baseurl" {
+    type        = string
+    description = "Full external client API base URL published in /.well-known/matrix/client, e.g. https://matrix.example.com"
+}
+
+variable "matrix_well_known_hostname" {
+    type        = string
+    description = "Hostname where /.well-known/matrix/* is served, e.g. example.com"
+}
+
+variable "matrix_federation_hostname" {
+    type        = string
+    description = "Public hostname for Matrix federation traffic, e.g. matrix.example.com"
+}
+
+variable "matrix_federation_server" {
+    type        = string
+    description = "Value published in /.well-known/matrix/server for remote homeservers, e.g. matrix.example.com:8448"
+}
+
+variable "matrix_rtc_hostname" {
+    type        = string
+    description = "Public hostname for MatrixRTC / LiveKit traffic, e.g. matrix-rtc.example.com"
+}
+
+variable "issuer_url" {
+    type        = string
+    description = "OpenID Connect issuer URL for Authserver, e.g. https://auth.example.com/o2"
+}
+
+
 # Required secret Nomad vars:
 #
 #   nomad/jobs/tuwunel/oidc
@@ -125,8 +167,8 @@ EOF
             provider = "consul"
             port     = "http"
             tags = [
-                "smartstack:hostname:${NOMAD_VAR_matrix_client_hostname}",
-                "smartstack:proxypath:${NOMAD_VAR_matrix_well_known_hostname}:/.well-known/matrix",
+                "smartstack:hostname:${var.matrix_client_hostname}",
+                "smartstack:proxypath:${var.matrix_well_known_hostname}:/.well-known/matrix",
                 "smartstack:protocol:https",
                 "smartstack:https-redirect",
                 "smartstack:mode:http",
@@ -147,7 +189,7 @@ EOF
             provider = "consul"
             port     = "http"
             tags = [
-                "smartstack:hostname:${NOMAD_VAR_matrix_federation_hostname}",
+                "smartstack:hostname:${var.matrix_federation_hostname}",
                 "smartstack:protocol:https",
                 "smartstack:mode:http",
                 "smartstack:external",
@@ -197,7 +239,8 @@ EOF
                 change_mode = "restart"
 
                 data = <<-EOF
-server_name = "${NOMAD_VAR_matrix_server_name}"
+[global]
+server_name = "${var.matrix_server_name}"
 address = "0.0.0.0"
 port = 8008
 database_path = "/data/database"
@@ -206,16 +249,16 @@ log = "info"
 log_to_stderr = true
 
 [global.well_known]
-client = "${NOMAD_VAR_matrix_client_base_url}"
-server = "${NOMAD_VAR_matrix_federation_server}"
-livekit_url = "https://${NOMAD_VAR_matrix_rtc_hostname}/livekit/jwt"
+client = "${var.matrix_client_baseurl}"
+server = "${var.matrix_federation_server}"
+livekit_url = "https://${var.matrix_rtc_hostname}/livekit/jwt"
 
 [[global.identity_provider]]
 brand = "authserver"
 name = "Authserver"
 client_id = "{{ with nomadVar "nomad/jobs/tuwunel/oidc" }}{{ .client_id }}{{ end }}"
 client_secret_file = "/local/authserver-oidc-client-secret"
-issuer_url = "${NOMAD_VAR_issuer_url}"
+issuer_url = "${var.issuer_url}"
 scope = ["openid", "profile", "email", "username"]
 trusted = true
 registration = true
@@ -308,7 +351,7 @@ EOF
             provider = "consul"
             port     = "ws"
             tags = [
-                "smartstack:hostname:${NOMAD_VAR_matrix_rtc_hostname}",
+                "smartstack:hostname:${var.matrix_rtc_hostname}",
                 "smartstack:protocol:https",
                 "smartstack:https-redirect",
                 "smartstack:mode:http",
@@ -329,7 +372,7 @@ EOF
             provider = "consul"
             port     = "jwt"
             tags = [
-                "smartstack:proxypath:${NOMAD_VAR_matrix_rtc_hostname}:/livekit/jwt",
+                "smartstack:proxypath:${var.matrix_rtc_hostname}:/livekit/jwt",
                 "smartstack:proxypath-strip-prefix:/livekit/jwt",
                 "smartstack:protocol:https",
                 "smartstack:mode:http",
@@ -350,7 +393,7 @@ EOF
             provider = "consul"
             port     = "rtc_tcp"
             tags = [
-                "smartstack:hostname:${NOMAD_VAR_matrix_rtc_hostname}",
+                "smartstack:hostname:${var.matrix_rtc_hostname}",
                 "smartstack:protocol:tcp",
                 "smartstack:external",
                 "smartstack:routing:port",
@@ -371,7 +414,7 @@ EOF
             provider = "consul"
             port     = "rtc_udp_00"
             tags = [
-                "smartstack:hostname:${NOMAD_VAR_matrix_rtc_hostname}",
+                "smartstack:hostname:${var.matrix_rtc_hostname}",
                 "smartstack:protocol:udp",
                 "smartstack:external",
                 "smartstack:routing:port",
@@ -424,9 +467,9 @@ EOF
             }
 
             env {
-                LIVEKIT_FULL_ACCESS_HOMESERVERS = "${NOMAD_VAR_matrix_server_name}"
+                LIVEKIT_FULL_ACCESS_HOMESERVERS = "${var.matrix_server_name}"
                 LIVEKIT_JWT_BIND                = ":8081"
-                LIVEKIT_URL                     = "wss://${NOMAD_VAR_matrix_rtc_hostname}"
+                LIVEKIT_URL                     = "wss://${var.matrix_rtc_hostname}"
             }
 
             template {
