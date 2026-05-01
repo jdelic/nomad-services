@@ -463,7 +463,7 @@ EOF
             driver = "docker"
 
             config {
-                image = "ghcr.io/element-hq/lk-jwt-service:v0.4.4"
+                image = "ghcr.io/element-hq/lk-jwt-service:0.4.4"
             }
 
             env {
