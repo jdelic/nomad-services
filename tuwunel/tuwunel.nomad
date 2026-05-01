@@ -15,6 +15,10 @@
 #     and used by SSO callbacks.
 #     Example: https://matrix.example.com
 #
+#   matrix_element_hostname
+#     Public hostname for the Element Web Matrix client.
+#     Example: element.example.com
+#
 #   matrix_well_known_hostname
 #     Hostname where /.well-known/matrix/* is served. HAProxy uses
 #     smartstack:proxypath to forward only that path to the Matrix service.
@@ -53,6 +57,11 @@ variable "matrix_client_hostname" {
 variable "matrix_client_baseurl" {
     type        = string
     description = "Full external client API base URL published in /.well-known/matrix/client, e.g. https://matrix.example.com"
+}
+
+variable "matrix_element_hostname" {
+    type        = string
+    description = "Public hostname for the Element Web Matrix client, e.g. element.example.com"
 }
 
 variable "matrix_well_known_hostname" {
@@ -274,6 +283,84 @@ EOF
             resources {
                 cpu    = 1000
                 memory = 2048
+            }
+        }
+    }
+
+    group "element-web" {
+        count = 1
+
+        network {
+            mode = "bridge"
+
+            port "http" {
+                to = 8080
+            }
+        }
+
+        restart {
+            attempts = 10
+            interval = "30m"
+            delay    = "15s"
+            mode     = "delay"
+        }
+
+        service {
+            name     = "tuwunel-element-web"
+            provider = "consul"
+            port     = "http"
+            tags = [
+                "smartstack:hostname:${var.matrix_element_hostname}",
+                "smartstack:protocol:https",
+                "smartstack:https-redirect",
+                "smartstack:mode:http",
+                "smartstack:external",
+            ]
+
+            check {
+                name     = "element-web-http"
+                type     = "http"
+                path     = "/config.json"
+                interval = "15s"
+                timeout  = "5s"
+            }
+        }
+
+        task "element-web" {
+            driver = "docker"
+
+            config {
+                image   = "vectorim/element-web:latest"
+                ports   = ["http"]
+                volumes = [
+                    "local/config.json:/app/config.json:ro",
+                ]
+            }
+
+            env {
+                ELEMENT_WEB_PORT = "8080"
+            }
+
+            template {
+                destination = "local/config.json"
+                change_mode = "restart"
+
+                data = <<-EOF
+{
+    "default_server_name": "${var.matrix_server_name}",
+    "default_server_config": {
+        "m.homeserver": {
+            "base_url": "${var.matrix_client_baseurl}"
+        }
+    },
+    "disable_custom_urls": false
+}
+EOF
+            }
+
+            resources {
+                cpu    = 200
+                memory = 256
             }
         }
     }
