@@ -270,6 +270,20 @@ allow_registration = false
 log = "info"
 log_to_stderr = true
 
+allow_federation = true
+federate_created_rooms = false
+require_auth_for_profile_requests = true
+allow_public_room_directory_over_federation = false
+allow_public_room_directory_without_auth = false
+allow_public_room_search_by_id = true
+allow_unlisted_room_search_by_id = true
+show_all_local_users_in_user_directory = false
+turn_allow_guests = false
+lockdown_public_room_directory = false
+allow_device_name_federation = false
+allow_inbound_profile_lookup_federation_requests = false
+allow_room_creation = true
+
 [global.well_known]
 client = "${var.matrix_client_baseurl}"
 server = "${var.matrix_federation_server}"
