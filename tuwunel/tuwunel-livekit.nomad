@@ -160,6 +160,7 @@ job "tuwunel-livekit" {
 
             config {
                 image = "livekit/livekit-server:v1.11.0"
+                network_mode = "host"
                 args  = ["--config", "/local/livekit.yaml"]
             }
 
@@ -229,6 +230,7 @@ EOF
 
             config {
                 image = "ghcr.io/element-hq/lk-jwt-service:0.4.4"
+                network_mode = "host"
             }
 
             env {
