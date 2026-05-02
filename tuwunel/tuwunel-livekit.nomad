@@ -8,6 +8,11 @@ variable "matrix_rtc_hostname" {
     description = "Public hostname for MatrixRTC / LiveKit traffic, e.g. matrix-rtc.example.com"
 }
 
+variable "livekit_external_ip" {
+    type        = string
+    description = "External IP address to advertise to LiveKit clients. If empty, Livekit will use Google's STUN servers to find it. Mostly useful for testing setups."
+    default     = ""
+}
 
 
 job "tuwunel-livekit" {
@@ -159,6 +164,7 @@ job "tuwunel-livekit" {
             tags = [
                 "smartstack:hostname:${var.matrix_rtc_hostname}",
                 "smartstack:protocol:udp",
+                "smartstack:mode:udp",
                 "smartstack:external",
                 "smartstack:routing:port",
                 "smartstack:extport:50100-50109",
@@ -191,9 +197,13 @@ room:
     auto_create: false
 rtc:
     tcp_port: 7881
-    port_range_start: 50100
-    port_range_end: 50109
+    udp_port: 50100-50109
+{{- if eq "${var.livekit_external_ip}" "" }}
     use_external_ip: true
+{{- else }}
+    use_external_ip: false
+    node_ip: "${var.livekit_external_ip}"
+{{- end }}
     enable_loopback_candidate: false
 keys:
 {{ with nomadVar "nomad/jobs/tuwunel/matrix-rtc" }}
