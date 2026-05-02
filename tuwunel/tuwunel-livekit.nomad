@@ -93,86 +93,64 @@ job "tuwunel-livekit" {
             read_only = true
         }
 
-        service {
-            name     = "tuwunel-matrix-rtc-livekit"
-            provider = "consul"
-            port     = "ws"
-            tags = [
-                "smartstack:hostname:${var.matrix_rtc_hostname}",
-                "smartstack:protocol:https",
-                "smartstack:https-redirect",
-                "smartstack:mode:http",
-                "smartstack:external",
-            ]
-
-            check {
-                name     = "matrix-rtc-livekit-tcp"
-                type     = "tcp"
-                port     = "ws"
-                interval = "15s"
-                timeout  = "5s"
-            }
-        }
-
-        service {
-            name     = "tuwunel-matrix-rtc-jwt"
-            provider = "consul"
-            port     = "jwt"
-            tags = [
-                "smartstack:proxypath:${var.matrix_rtc_hostname}:/livekit/jwt",
-                "smartstack:proxypath-strip-prefix:/livekit/jwt",
-                "smartstack:protocol:https",
-                "smartstack:mode:http",
-                "smartstack:external",
-            ]
-
-            check {
-                name     = "matrix-rtc-jwt-http"
-                type     = "http"
-                port     = "jwt"
-                path     = "/healthz"
-                interval = "15s"
-                timeout  = "5s"
-            }
-        }
-
-        service {
-            name     = "tuwunel-matrix-rtc-tcp"
-            provider = "consul"
-            port     = "rtc_tcp"
-            tags = [
-                "smartstack:hostname:${var.matrix_rtc_hostname}",
-                "smartstack:protocol:tcp",
-                "smartstack:external",
-                "smartstack:routing:port",
-                "smartstack:extport:7881",
-            ]
-
-            check {
-                name     = "matrix-rtc-tcp"
-                type     = "tcp"
-                port     = "rtc_tcp"
-                interval = "15s"
-                timeout  = "5s"
-            }
-        }
-
-        service {
-            name     = "tuwunel-matrix-rtc-udp"
-            provider = "consul"
-            port     = "rtc_udp_00"
-            tags = [
-                "smartstack:hostname:${var.matrix_rtc_hostname}",
-                "smartstack:protocol:udp",
-                "smartstack:mode:udp",
-                "smartstack:external",
-                "smartstack:routing:port",
-                "smartstack:extport:50100-50109",
-            ]
-        }
-
         task "livekit" {
             driver = "docker"
+
+            service {
+                name     = "tuwunel-matrix-rtc-livekit"
+                provider = "consul"
+                port     = "ws"
+                tags = [
+                    "smartstack:hostname:${var.matrix_rtc_hostname}",
+                    "smartstack:protocol:https",
+                    "smartstack:https-redirect",
+                    "smartstack:mode:http",
+                    "smartstack:external",
+                ]
+
+                check {
+                    name     = "matrix-rtc-livekit-tcp"
+                    type     = "tcp"
+                    port     = "ws"
+                    interval = "15s"
+                    timeout  = "5s"
+                }
+            }
+
+            service {
+                name     = "tuwunel-matrix-rtc-tcp"
+                provider = "consul"
+                port     = "rtc_tcp"
+                tags = [
+                    "smartstack:hostname:${var.matrix_rtc_hostname}",
+                    "smartstack:protocol:tcp",
+                    "smartstack:external",
+                    "smartstack:routing:port",
+                    "smartstack:extport:7881",
+                ]
+
+                check {
+                    name     = "matrix-rtc-tcp"
+                    type     = "tcp"
+                    port     = "rtc_tcp"
+                    interval = "15s"
+                    timeout  = "5s"
+                }
+            }
+
+            service {
+                name     = "tuwunel-matrix-rtc-udp"
+                provider = "consul"
+                port     = "rtc_udp_00"
+                tags = [
+                    "smartstack:hostname:${var.matrix_rtc_hostname}",
+                    "smartstack:protocol:udp",
+                    "smartstack:mode:udp",
+                    "smartstack:external",
+                    "smartstack:routing:port",
+                    "smartstack:extport:50100-50109",
+                ]
+            }
 
             volume_mount {
                 volume      = "host-ca-bundle"
@@ -220,6 +198,28 @@ EOF
 
         task "jwt" {
             driver = "docker"
+
+            service {
+                name     = "tuwunel-matrix-rtc-jwt"
+                provider = "consul"
+                port     = "jwt"
+                tags = [
+                    "smartstack:proxypath:${var.matrix_rtc_hostname}:/livekit/jwt",
+                    "smartstack:proxypath-strip-prefix:/livekit/jwt",
+                    "smartstack:protocol:https",
+                    "smartstack:mode:http",
+                    "smartstack:external",
+                ]
+
+                check {
+                    name     = "matrix-rtc-jwt-http"
+                    type     = "http"
+                    port     = "jwt"
+                    path     = "/healthz"
+                    interval = "15s"
+                    timeout  = "5s"
+                }
+            }
 
             volume_mount {
                 volume      = "host-ca-bundle"
