@@ -169,13 +169,13 @@ job "tuwunel-livekit" {
                 change_mode = "restart"
 
                 data = <<-EOF
-port: 7880
+port: {{env "NOMAD_PORT_ws"}}
 bind_addresses:
-    - ""
+    - {{env "NOMAD_IP_ws"}}
 room:
     auto_create: false
 rtc:
-    tcp_port: 7881
+    tcp_port: {{env "NOMAD_PORT_rtc_tcp"}}
     udp_port: 50100-50109
 {{- if eq "${var.livekit_external_ip}" "" }}
     use_external_ip: true
@@ -183,6 +183,9 @@ rtc:
     use_external_ip: false
     node_ip: "${var.livekit_external_ip}"
 {{- end }}
+    ips:
+        includes:
+            - {{env "NOMAD_IP_ws"}}/32
     enable_loopback_candidate: false
 keys:
 {{ with nomadVar "nomad/jobs/tuwunel/matrix-rtc" }}
@@ -235,7 +238,7 @@ EOF
 
             env {
                 LIVEKIT_FULL_ACCESS_HOMESERVERS = "${var.matrix_server_name}"
-                LIVEKIT_JWT_BIND                = ":8081"
+                LIVEKIT_JWT_BIND                = "${NOMAD_IP_jwt}:${NOMAD_PORT_jwt}"
                 LIVEKIT_URL                     = "wss://${var.matrix_rtc_hostname}"
             }
 
