@@ -25,6 +25,54 @@ job "beads-dolt" {
             read_only       = false
         }
 
+        task "git-init" {
+            driver = "docker"
+
+            lifecycle {
+                hook    = "prestart"
+                sidecar = false
+            }
+
+            volume_mount {
+                volume      = "beads-dolt-data"
+                destination = "/dolt"
+                read_only   = false
+            }
+
+            config {
+                image   = "debian:trixie-slim"
+                command = "/usr/bin/bash"
+                args = [
+                    "-ec",
+                    <<-EOS
+                    if [ ! -d "/dolt/git/ssh-phone-agent" ]; then
+                        echo "Initializing Dolt git remote..."
+                        mkdir -p /dolt/git/ssh-phone-agent
+                        cd /dolt/git/ssh-phone-agent
+                        apt update && apt install -y --no-install-recommends git
+                        git config --global --add safe.directory /dolt/git/ssh-phone-agent
+                        git init --bare -b main
+                        echo "Git remote initialized at /dolt/git/ssh-phone-agent"
+                        mkdir -p /dolt/tmp/
+                        cd /dolt/tmp/
+                        git clone /dolt/git/ssh-phone-agent
+                        git config --global --add safe.directory /dolt/tmp/ssh-phone-agent
+                        cd ssh-phone-agent
+                        git config user.name "Init"
+                        git config user.email "dolt-init@local"
+                        git commit --allow-empty -m "Initial commit"
+                        git push origin main
+                        cd ..
+                        rm -rf /dolt/tmp/ssh-phone-agent
+                    else
+                        echo "Git remote already initialized at /dolt/git/ssh-phone-agent"
+                    fi
+                    chown -R 1000:1000 /dolt/git/
+                    EOS
+                ]
+            }
+        }
+
         task "dolt" {
             driver = "docker"
 
@@ -94,6 +142,17 @@ job "beads-dolt" {
 
                 data = <<-EOF
 CREATE DATABASE IF NOT EXISTS test;
+EOF
+            }
+
+            template {
+                destination = "local/initdb/02-git.sh"
+                change_mode = "restart"
+                perms = "0755"
+
+                data = <<-EOF
+#!/bin/bash
+git config --global --add safe.directory '*'
 EOF
             }
 
@@ -169,6 +228,8 @@ EOF
                         GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_pull TO 'beads'@'%';
                         GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_backup TO 'beads'@'%';
                         GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_remote TO 'beads'@'%';
+                        USE ssh_phone_agent;
+                        CALL dolt_remote('add', 'origin', 'file:///var/lib/dolt/git/ssh-phone-agent');
                     SQL
                     EOS
                 ]
