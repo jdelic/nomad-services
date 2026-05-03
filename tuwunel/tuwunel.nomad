@@ -210,7 +210,8 @@ EOF
                 "smartstack:external",
                 "smartstack:routing:port",
                 "smartstack:extport:8448",
-                "smartstack:ssl-terminate"
+                "smartstack:ssl-terminate",
+                "smartstack:outport:tcp:8448",
             ]
 
             check {
