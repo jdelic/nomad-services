@@ -37,6 +37,14 @@ job "tuwunel-livekit" {
                 static = 7881
             }
 
+            port "turn_tls" {
+                static = 5349
+            }
+
+            port "turn_udp" {
+                static = 3478
+            }
+
             # Nomad doesn't support ranged port declarations here, so we reserve
             # ten explicit UDP ports for a small LiveKit deployment.
             port "rtc_udp_00" {
@@ -152,6 +160,46 @@ job "tuwunel-livekit" {
                 ]
             }
 
+            service {
+                name     = "tuwunel-matrix-rtc-turn-tls"
+                provider = "consul"
+                port     = "turn_tls"
+                tags = [
+                    "smartstack:hostname:${var.matrix_rtc_hostname}",
+                    "smartstack:protocol:sni",
+                    "smartstack:ssl-terminate",
+                    "smartstack:mode:tcp",
+                    "smartstack:external",
+                    "smartstack:routing:port",
+                    "smartstack:extport:5349",
+                    "smartstack:outport:tcp:5349",
+                ]
+
+                check {
+                    name     = "matrix-rtc-turn-tls"
+                    type     = "tcp"
+                    port     = "turn_tls"
+                    interval = "15s"
+                    timeout  = "5s"
+                }
+            }
+
+            service {
+                name     = "tuwunel-matrix-rtc-turn-udp"
+                provider = "consul"
+                port     = "turn_udp"
+                tags = [
+                    "smartstack:hostname:${var.matrix_rtc_hostname}",
+                    "smartstack:protocol:udp",
+                    "smartstack:mode:udp",
+                    "smartstack:external",
+                    "smartstack:routing:port",
+                    "smartstack:extport:3478",
+                    "smartstack:outport:udp:3478",
+                    "smartstack:outport:udp:55000-60000",
+                ]
+            }
+
             volume_mount {
                 volume      = "host-ca-bundle"
                 destination = "/etc/ssl/certs/ca-certificates.crt"
@@ -191,6 +239,14 @@ keys:
 {{ with nomadVar "nomad/jobs/tuwunel/matrix-rtc" }}
     {{ .livekit_key }}: "{{ .livekit_secret }}"
 {{ end }}
+turn:
+    enabled: true
+    external_tls: true
+    tls_port: 5349
+    udp_port: 3478
+    relay_range_start: 55000
+    relay_range_end: 60000
+    domain: ${var.matrix_rtc_hostname}
 EOF
             }
 
