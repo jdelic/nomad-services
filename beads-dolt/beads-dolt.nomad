@@ -229,8 +229,14 @@ EOF
                         GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_backup TO 'beads'@'%';
                         GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_remote TO 'beads'@'%';
                         USE ssh_phone_agent;
-                        CALL dolt_remote('add', 'origin', 'file:///var/lib/dolt/git/ssh-phone-agent');
                     SQL
+
+                    remote_exists=$(mysql -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED -u root -p"$ROOT_PASSWORD" -N -B -D ssh_phone_agent -e "SELECT COUNT(*) FROM dolt_remotes WHERE name = 'origin';")
+                    if [ "$remote_exists" = "0" ]; then
+                        mysql -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED -u root -p"$ROOT_PASSWORD" -D ssh_phone_agent -e "CALL dolt_remote('add', 'origin', 'file:///var/lib/dolt/git/ssh-phone-agent');"
+                    else
+                        echo "Dolt remote origin already exists"
+                    fi
                     EOS
                 ]
             }
