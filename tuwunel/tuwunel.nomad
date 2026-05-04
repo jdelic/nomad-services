@@ -184,6 +184,7 @@ EOF
             tags = [
                 "smartstack:hostname:${var.matrix_client_hostname}",
                 "smartstack:proxypath:${var.matrix_well_known_hostname}:/.well-known/matrix",
+                "smartstack:proxypath:${var.matrix_well_known_hostname}:/_matrix",
                 "smartstack:protocol:https",
                 "smartstack:https-redirect",
                 "smartstack:mode:http",
