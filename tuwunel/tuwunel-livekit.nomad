@@ -114,6 +114,7 @@ job "tuwunel-livekit" {
                     "smartstack:https-redirect",
                     "smartstack:mode:http",
                     "smartstack:external",
+                    "smartstack:hostport:tcp:7880",
                 ]
 
                 check {
@@ -273,6 +274,7 @@ EOF
                     "smartstack:protocol:https",
                     "smartstack:mode:http",
                     "smartstack:external",
+                    "smartstack:hostport:tcp:8081",
                 ]
 
                 check {
