@@ -135,6 +135,7 @@ job "tuwunel-livekit" {
                     "smartstack:external",
                     "smartstack:routing:port",
                     "smartstack:extport:7881",
+                    "smartstack:hostport:tcp:7881",
                 ]
 
                 check {
@@ -157,6 +158,7 @@ job "tuwunel-livekit" {
                     "smartstack:external",
                     "smartstack:routing:port",
                     "smartstack:extport:50100-50109",
+                    "smartstack:hostport:udp:50100-50109",
                 ]
             }
 
@@ -173,6 +175,7 @@ job "tuwunel-livekit" {
                     "smartstack:routing:port",
                     "smartstack:extport:5349",
                     "smartstack:outport:tcp:5349",
+                    "smartstack:hostport:tcp:5349",
                 ]
 
                 check {
@@ -197,6 +200,7 @@ job "tuwunel-livekit" {
                     "smartstack:extport:3478",
                     "smartstack:outport:udp:3478",
                     "smartstack:outport:udp:55000-60000",
+                    "smartstack:hostport:udp:55000-60000",
                 ]
             }
 
