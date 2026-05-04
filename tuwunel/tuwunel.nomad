@@ -188,36 +188,13 @@ EOF
                 "smartstack:https-redirect",
                 "smartstack:mode:http",
                 "smartstack:external",
+                "smartstack:outport:tcp:8448",
             ]
 
             check {
                 name     = "tuwunel-client-http"
                 type     = "http"
                 path     = "/_tuwunel/server_version"
-                interval = "15s"
-                timeout  = "5s"
-            }
-        }
-
-        service {
-            name     = "tuwunel-federation"
-            provider = "consul"
-            port     = "http"
-            tags = [
-                "smartstack:hostname:${var.matrix_federation_hostname}",
-                "smartstack:protocol:sni",
-                "smartstack:mode:http",
-                "smartstack:external",
-                "smartstack:routing:port",
-                "smartstack:extport:8448",
-                "smartstack:ssl-terminate",
-                "smartstack:outport:tcp:8448",
-            ]
-
-            check {
-                name     = "tuwunel-federation-http"
-                type     = "http"
-                path     = "/_matrix/federation/v1/version"
                 interval = "15s"
                 timeout  = "5s"
             }
