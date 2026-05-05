@@ -200,6 +200,7 @@ job "tuwunel-livekit" {
                     "smartstack:routing:port",
                     "smartstack:extport:3478",
                     "smartstack:outport:udp:3478",
+                    "smartstack:hostport:udp:3478",
                     "smartstack:outport:udp:55000-60000",
                     "smartstack:hostport:udp:55000-60000",
                 ]
@@ -236,9 +237,6 @@ rtc:
     use_external_ip: false
     node_ip: "${var.livekit_external_ip}"
 {{- end }}
-    ips:
-        includes:
-            - {{env "NOMAD_IP_ws"}}/32
     enable_loopback_candidate: false
 keys:
 {{ with nomadVar "nomad/jobs/tuwunel/matrix-rtc" }}
