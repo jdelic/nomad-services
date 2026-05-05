@@ -178,22 +178,49 @@ EOF
         }
 
         service {
+            name     = "tuwunel-client-http"
+            provider = "consul"
+            port     = "http"
+            tags = [
+                "smartstack:hostname:${var.matrix_client_hostname}",
+                "smartstack:proxypath::/.well-known/matrix",
+                "smartstack:proxypath::/_matrix",
+                "smartstack:protocol:http",
+                "smartstack:mode:http",
+                "smartstack:external",
+            ]
+
+            check {
+                name     = "tuwunel-client-http"
+                type     = "http"
+                path     = "/_tuwunel/server_version"
+                interval = "15s"
+                timeout  = "5s"
+            }
+        }
+
+
+        service {
             name     = "tuwunel-client"
             provider = "consul"
             port     = "http"
             tags = [
                 "smartstack:hostname:${var.matrix_client_hostname}",
-                "smartstack:proxypath:${var.matrix_well_known_hostname}:/.well-known/matrix",
-                "smartstack:proxypath:${var.matrix_well_known_hostname}:/_matrix",
+                "smartstack:proxypath::/.well-known/matrix",
+                "smartstack:proxypath::/_matrix",
+                "smartstack:proxypath::/_tuwunel",
                 "smartstack:protocol:https",
                 "smartstack:https-redirect",
                 "smartstack:mode:http",
                 "smartstack:external",
                 "smartstack:outport:tcp:8448",
+                "smartstack:cors:allow-origin:*",
+                "smartstack:cors:allow-methods:GET,POST,PUT,DELETE,OPTIONS",
+                "smartstack:cors:allow-headers:X-Requested-With,Content-Type,Authorization"
             ]
 
             check {
-                name     = "tuwunel-client-http"
+                name     = "tuwunel-client-https"
                 type     = "http"
                 path     = "/_tuwunel/server_version"
                 interval = "15s"
@@ -258,6 +285,10 @@ allow_public_room_search_by_id = true
 allow_unlisted_room_search_by_id = true
 show_all_local_users_in_user_directory = false
 turn_allow_guests = false
+turn_uri = [
+    "turns:${var.matrix_rtc_hostname}:3478?transport=udp",
+    "turns:${var.matrix_rtc_hostname}:5349?transport=tcp",
+]
 lockdown_public_room_directory = true
 allow_device_name_federation = false
 allow_inbound_profile_lookup_federation_requests = false
@@ -359,7 +390,16 @@ EOF
             "base_url": "${var.matrix_client_baseurl}"
         }
     },
-    "disable_custom_urls": false
+    "disable_custom_urls": false,
+    "sso_redirect_options": {
+        "immediate": true
+    },
+    "jitsi": {},
+    "element_call": {
+        "url": "https://matrix-rtc.maurus.net",
+        "use_exclusively": true
+    },
+    "show_labs_settings": true
 }
 EOF
             }
