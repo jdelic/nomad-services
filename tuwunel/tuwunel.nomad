@@ -89,6 +89,21 @@ variable "issuer_url" {
     description = "OpenID Connect issuer URL for Authserver, e.g. https://auth.example.com/o2"
 }
 
+variable "livekit_external_ipv4" {
+    type        = string
+    description = "External IPv4 address to advertise to LiveKit clients. If empty, Livekit will use Google's STUN servers to find it. Mostly useful for testing setups."
+}
+
+variable "livekit_external_ipv6" {
+    type        = string
+    description = "External IPv6 address to advertise to LiveKit clients. If empty, Livekit will use Google's STUN servers to find it. Mostly useful for testing setups."
+}
+
+variable "turn_server_hostname" {
+    type        = string
+    description = "Hostname for the TURN server to advertise to clients, e.g. turn.example.com."
+}
+
 
 # Required secret Nomad vars:
 #
@@ -273,7 +288,7 @@ address = "0.0.0.0"
 port = 8008
 database_path = "/data/database"
 allow_registration = false
-log = "info"
+log = "debug"
 log_to_stderr = true
 
 allow_federation = true
@@ -285,10 +300,10 @@ allow_public_room_search_by_id = true
 allow_unlisted_room_search_by_id = true
 show_all_local_users_in_user_directory = false
 turn_allow_guests = false
-turn_uri = [
-    "turns:${var.matrix_rtc_hostname}:3478?transport=udp",
-    "turns:${var.matrix_rtc_hostname}:5349?transport=tcp",
-]
+# turn_uri = [
+#     "turn:${var.turn_server_hostname}:3478?transport=udp",
+#     "turns:${var.turn_server_hostname}:443?transport=tcp",
+# ]
 lockdown_public_room_directory = true
 allow_device_name_federation = false
 allow_inbound_profile_lookup_federation_requests = false
@@ -396,7 +411,7 @@ EOF
     },
     "jitsi": {},
     "element_call": {
-        "url": "https://matrix-rtc.maurus.net",
+        "url": "https://${var.matrix_rtc_hostname}/",
         "use_exclusively": true
     },
     "show_labs_settings": true
