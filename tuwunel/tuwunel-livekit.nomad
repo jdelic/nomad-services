@@ -8,12 +8,20 @@ variable "matrix_rtc_hostname" {
     description = "Public hostname for MatrixRTC / LiveKit traffic, e.g. matrix-rtc.example.com"
 }
 
-variable "livekit_external_ip" {
+variable "livekit_external_ipv4" {
     type        = string
-    description = "External IP address to advertise to LiveKit clients. If empty, Livekit will use Google's STUN servers to find it. Mostly useful for testing setups."
-    default     = ""
+    description = "External IPv4 address to advertise to LiveKit clients. If empty, Livekit will use Google's STUN servers to find it. Mostly useful for testing setups."
 }
 
+variable "livekit_external_ipv6" {
+    type        = string
+    description = "External IPv6 address to advertise to LiveKit clients. If empty, Livekit will use Google's STUN servers to find it. Mostly useful for testing setups."
+}
+
+variable "turn_server_hostname" {
+    type        = string
+    description = "Hostname for the TURN server to advertise to clients, e.g. turn.example.com."
+}
 
 job "tuwunel-livekit" {
     datacenters = ["RZ19", "vagrant"]
@@ -48,44 +56,44 @@ job "tuwunel-livekit" {
             # Nomad doesn't support ranged port declarations here, so we reserve
             # ten explicit UDP ports for a small LiveKit deployment.
             port "rtc_udp_00" {
-                static = 50100
+                static = 7882
             }
 
-            port "rtc_udp_01" {
-                static = 50101
-            }
-
-            port "rtc_udp_02" {
-                static = 50102
-            }
-
-            port "rtc_udp_03" {
-                static = 50103
-            }
-
-            port "rtc_udp_04" {
-                static = 50104
-            }
-
-            port "rtc_udp_05" {
-                static = 50105
-            }
-
-            port "rtc_udp_06" {
-                static = 50106
-            }
-
-            port "rtc_udp_07" {
-                static = 50107
-            }
-
-            port "rtc_udp_08" {
-                static = 50108
-            }
-
-            port "rtc_udp_09" {
-                static = 50109
-            }
+            # port "rtc_udp_01" {
+            #     static = 50101
+            # }
+            #
+            # port "rtc_udp_02" {
+            #     static = 50102
+            # }
+            #
+            # port "rtc_udp_03" {
+            #     static = 50103
+            # }
+            #
+            # port "rtc_udp_04" {
+            #     static = 50104
+            # }
+            #
+            # port "rtc_udp_05" {
+            #     static = 50105
+            # }
+            #
+            # port "rtc_udp_06" {
+            #     static = 50106
+            # }
+            #
+            # port "rtc_udp_07" {
+            #     static = 50107
+            # }
+            #
+            # port "rtc_udp_08" {
+            #     static = 50108
+            # }
+            #
+            # port "rtc_udp_09" {
+            #     static = 50109
+            # }
         }
 
         restart {
@@ -110,10 +118,12 @@ job "tuwunel-livekit" {
                 port     = "ws"
                 tags = [
                     "smartstack:hostname:${var.matrix_rtc_hostname}",
+                    "smartstack:routing:hostname",
                     "smartstack:protocol:https",
                     "smartstack:https-redirect",
                     "smartstack:mode:http",
                     "smartstack:external",
+                    "smartstack:outport:tcp:7880",
                     "smartstack:hostport:tcp:7880",
                 ]
 
@@ -136,6 +146,7 @@ job "tuwunel-livekit" {
                     "smartstack:external",
                     "smartstack:routing:port",
                     "smartstack:extport:7881",
+                    "smartstack:outport:tcp:7881",
                     "smartstack:hostport:tcp:7881",
                 ]
 
@@ -158,53 +169,52 @@ job "tuwunel-livekit" {
                     "smartstack:mode:udp",
                     "smartstack:external",
                     "smartstack:routing:port",
-                    "smartstack:extport:50100-50109",
-                    "smartstack:hostport:udp:50100-50109",
+                    "smartstack:extport:7882",
+                    "smartstack:outport:udp:7882",
+                    "smartstack:hostport:udp:7882",
                 ]
             }
 
-            service {
-                name     = "tuwunel-matrix-rtc-turn-tls"
-                provider = "consul"
-                port     = "turn_tls"
-                tags = [
-                    "smartstack:hostname:${var.matrix_rtc_hostname}",
-                    "smartstack:protocol:sni",
-                    "smartstack:ssl-terminate",
-                    "smartstack:mode:tcp",
-                    "smartstack:external",
-                    "smartstack:routing:port",
-                    "smartstack:extport:5349",
-                    "smartstack:outport:tcp:5349",
-                    "smartstack:hostport:tcp:5349",
-                ]
+            # service {
+            #     name     = "tuwunel-matrix-rtc-turn-tls"
+            #     provider = "consul"
+            #     port     = "turn_tls"
+            #     tags = [
+            #         "smartstack:hostname:${var.turn_server_hostname}",
+            #         "smartstack:protocol:https",
+            #         "smartstack:mode:http",
+            #         "smartstack:https-redirect",
+            #         "smartstack:external",
+            #         "smartstack:routing:hostname",
+            #         "smartstack:hostport:tcp:5349",
+            #     ]
+            #
+            #     check {
+            #         name     = "matrix-rtc-turn-tls"
+            #         type     = "tcp"
+            #         port     = "turn_tls"
+            #         interval = "15s"
+            #         timeout  = "5s"
+            #     }
+            # }
 
-                check {
-                    name     = "matrix-rtc-turn-tls"
-                    type     = "tcp"
-                    port     = "turn_tls"
-                    interval = "15s"
-                    timeout  = "5s"
-                }
-            }
-
-            service {
-                name     = "tuwunel-matrix-rtc-turn-udp"
-                provider = "consul"
-                port     = "turn_udp"
-                tags = [
-                    "smartstack:hostname:${var.matrix_rtc_hostname}",
-                    "smartstack:protocol:udp",
-                    "smartstack:mode:udp",
-                    "smartstack:external",
-                    "smartstack:routing:port",
-                    "smartstack:extport:3478",
-                    "smartstack:outport:udp:3478",
-                    "smartstack:hostport:udp:3478",
-                    "smartstack:outport:udp:55000-60000",
-                    "smartstack:hostport:udp:55000-60000",
-                ]
-            }
+            # service {
+            #     name     = "tuwunel-matrix-rtc-turn-udp"
+            #     provider = "consul"
+            #     port     = "turn_udp"
+            #     tags = [
+            #         "smartstack:hostname:${var.turn_server_hostname}",
+            #         "smartstack:protocol:udp",
+            #         "smartstack:mode:udp",
+            #         "smartstack:external",
+            #         "smartstack:routing:port",
+            #         "smartstack:extport:3478",
+            #         "smartstack:outport:udp:3478",
+            #         "smartstack:hostport:udp:3478",
+            #         "smartstack:outport:udp:55000-56000",
+            #         "smartstack:hostport:udp:55000-56000",
+            #     ]
+            # }
 
             volume_mount {
                 volume      = "host-ca-bundle"
@@ -228,28 +238,30 @@ bind_addresses:
     - {{env "NOMAD_IP_ws"}}
 room:
     auto_create: false
+logging:
+    level: debug
 rtc:
     tcp_port: {{env "NOMAD_PORT_rtc_tcp"}}
-    udp_port: 50100-50109
-{{- if eq "${var.livekit_external_ip}" "" }}
-    use_external_ip: true
-{{- else }}
+    udp_port: {{env "NOMAD_PORT_rtc_udp_00"}}
     use_external_ip: false
-    node_ip: "${var.livekit_external_ip}"
-{{- end }}
+    node_ip: "${var.livekit_external_ipv4}"
     enable_loopback_candidate: false
+    # we need to ensure that udp packets going to Envoy, going to Livekit, come back on the internal network
+    # interface. Livekit has a habit of selecting the linklocak consul0 interface or similar when responding
+    # to STUN.
+    ips:
+        includes:
+            - {{env "NOMAD_IP_rtc_udp_00"}}/32
 keys:
 {{ with nomadVar "nomad/jobs/tuwunel/matrix-rtc" }}
     {{ .livekit_key }}: "{{ .livekit_secret }}"
 {{ end }}
 turn:
-    enabled: true
+    enabled: false
     external_tls: true
     tls_port: 5349
     udp_port: 3478
-    relay_range_start: 55000
-    relay_range_end: 60000
-    domain: ${var.matrix_rtc_hostname}
+    domain: ${var.turn_server_hostname}
 EOF
             }
 
