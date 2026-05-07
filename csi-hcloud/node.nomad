@@ -2,6 +2,7 @@ job "hcloud-csi-node" {
     datacenters = ["RZ19"]
     namespace   = "default"
     type        = "system"
+    node_pool   = "all"
 
     group "node" {
         task "plugin" {

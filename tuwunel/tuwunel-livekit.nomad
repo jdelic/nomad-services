@@ -16,6 +16,7 @@ variable "livekit_external_ipv4" {
 variable "livekit_external_ipv6" {
     type        = string
     description = "External IPv6 address to advertise to LiveKit clients. If empty, Livekit will use Google's STUN servers to find it. Mostly useful for testing setups."
+    default     = ""
 }
 
 variable "turn_server_hostname" {
@@ -26,6 +27,7 @@ variable "turn_server_hostname" {
 job "tuwunel-livekit" {
     datacenters = ["RZ19", "vagrant"]
     type        = "service"
+    node_pool   = "edge"
 
     group "matrix-rtc" {
         count = 1
@@ -43,20 +45,24 @@ job "tuwunel-livekit" {
 
             port "rtc_tcp" {
                 static = 7881
+                host_network = "external"  # as we work on the "edge" node_pool, we can have direct internet access
             }
 
             port "turn_tls" {
                 static = 5349
+                host_network = "external"  # as we work on the "edge" node_pool, we can have direct internet access
             }
 
             port "turn_udp" {
                 static = 3478
+                host_network = "external"  # as we work on the "edge" node_pool, we can have direct internet access
             }
 
             # Nomad doesn't support ranged port declarations here, so we reserve
             # ten explicit UDP ports for a small LiveKit deployment.
             port "rtc_udp_00" {
                 static = 7882
+                host_network = "external"  # as we work on the "edge" node_pool, we can have direct internet access
             }
 
             # port "rtc_udp_01" {
@@ -141,13 +147,10 @@ job "tuwunel-livekit" {
                 provider = "consul"
                 port     = "rtc_tcp"
                 tags = [
-                    "smartstack:hostname:${var.matrix_rtc_hostname}",
                     "smartstack:protocol:tcp",
                     "smartstack:external",
-                    "smartstack:routing:port",
                     "smartstack:extport:7881",
                     "smartstack:outport:tcp:7881",
-                    "smartstack:hostport:tcp:7881",
                 ]
 
                 check {
@@ -164,14 +167,10 @@ job "tuwunel-livekit" {
                 provider = "consul"
                 port     = "rtc_udp_00"
                 tags = [
-                    "smartstack:hostname:${var.matrix_rtc_hostname}",
                     "smartstack:protocol:udp",
-                    "smartstack:mode:udp",
                     "smartstack:external",
-                    "smartstack:routing:port",
                     "smartstack:extport:7882",
                     "smartstack:outport:udp:7882",
-                    "smartstack:hostport:udp:7882",
                 ]
             }
 

@@ -1,6 +1,7 @@
 job "node" {
     # node plugins should run anywhere your task might be placed, i.e. ~everywhere
     type = "system"
+    node_pool = "all"
 
     group "node" {
         task "node" {
