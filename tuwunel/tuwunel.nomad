@@ -363,6 +363,7 @@ EOF
             port     = "http"
             tags = [
                 "smartstack:hostname:${var.matrix_element_hostname}",
+                "smartstack:routing:hostname",
                 "smartstack:protocol:https",
                 "smartstack:https-redirect",
                 "smartstack:mode:http",
