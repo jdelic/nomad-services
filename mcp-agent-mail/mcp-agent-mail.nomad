@@ -280,6 +280,7 @@ job "mcp-agent-mail" {
                 provider = "consul"
                 tags     = [
                     "smartstack:hostname:mcp-mail.${var.domain}",
+                    "smartstack:routing:hostname",
                     "smartstack:protocol:https",
                     "smartstack:https-redirect",
                     "smartstack:mode:http",
