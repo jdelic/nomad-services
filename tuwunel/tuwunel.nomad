@@ -300,7 +300,7 @@ allow_public_room_search_by_id = true
 allow_unlisted_room_search_by_id = true
 show_all_local_users_in_user_directory = false
 turn_allow_guests = false
-# turn_uri = [
+# turn_uris = [
 #     "turn:${var.turn_server_hostname}:3478?transport=udp",
 #     "turns:${var.turn_server_hostname}:443?transport=tcp",
 # ]

@@ -48,58 +48,19 @@ job "tuwunel-livekit" {
                 host_network = "external"  # as we work on the "edge" node_pool, we can have direct internet access
             }
 
-            port "turn_tls" {
-                static = 5349
-                host_network = "external"  # as we work on the "edge" node_pool, we can have direct internet access
-            }
-
-            port "turn_udp" {
-                static = 3478
-                host_network = "external"  # as we work on the "edge" node_pool, we can have direct internet access
-            }
-
-            # Nomad doesn't support ranged port declarations here, so we reserve
-            # ten explicit UDP ports for a small LiveKit deployment.
+            # port "turn_tls" {
+            #     static = 5349
+            # }
+            #
+            # port "turn_udp" {
+            #     static = 3478
+            #     host_network = "external"  # as we work on the "edge" node_pool, we can have direct internet access
+            # }
+            #
             port "rtc_udp_00" {
                 static = 7882
                 host_network = "external"  # as we work on the "edge" node_pool, we can have direct internet access
             }
-
-            # port "rtc_udp_01" {
-            #     static = 50101
-            # }
-            #
-            # port "rtc_udp_02" {
-            #     static = 50102
-            # }
-            #
-            # port "rtc_udp_03" {
-            #     static = 50103
-            # }
-            #
-            # port "rtc_udp_04" {
-            #     static = 50104
-            # }
-            #
-            # port "rtc_udp_05" {
-            #     static = 50105
-            # }
-            #
-            # port "rtc_udp_06" {
-            #     static = 50106
-            # }
-            #
-            # port "rtc_udp_07" {
-            #     static = 50107
-            # }
-            #
-            # port "rtc_udp_08" {
-            #     static = 50108
-            # }
-            #
-            # port "rtc_udp_09" {
-            #     static = 50109
-            # }
         }
 
         restart {
@@ -131,6 +92,11 @@ job "tuwunel-livekit" {
                     "smartstack:external",
                     "smartstack:outport:tcp:7880",
                     "smartstack:hostport:tcp:7880",
+                    "smartstack:outport:udp:19302",
+                    "haproxy:backend:timeout:tunnel:1h",
+                    "haproxy:backend:timeout:connect:30s",
+                    "haproxy:backend:timeout:client:5m",
+                    "haproxy:backend:timeout:server:5m",
                 ]
 
                 check {
@@ -153,13 +119,13 @@ job "tuwunel-livekit" {
                     "smartstack:outport:tcp:7881",
                 ]
 
-                check {
-                    name     = "matrix-rtc-tcp"
-                    type     = "tcp"
-                    port     = "rtc_tcp"
-                    interval = "15s"
-                    timeout  = "5s"
-                }
+                # check {
+                #     name     = "matrix-rtc-tcp"
+                #     type     = "tcp"
+                #     port     = "rtc_tcp"
+                #     interval = "15s"
+                #     timeout  = "5s"
+                # }
             }
 
             service {
@@ -169,8 +135,9 @@ job "tuwunel-livekit" {
                 tags = [
                     "smartstack:protocol:udp",
                     "smartstack:external",
-                    "smartstack:extport:7882",
-                    "smartstack:outport:udp:7882",
+                    "smartstack:extport:56000-56010",
+                    "smartstack:outport:udp:56000-56010",
+                    "smartstack:hostport:udp:56000-56010",
                 ]
             }
 
@@ -180,9 +147,8 @@ job "tuwunel-livekit" {
             #     port     = "turn_tls"
             #     tags = [
             #         "smartstack:hostname:${var.turn_server_hostname}",
-            #         "smartstack:protocol:https",
-            #         "smartstack:mode:http",
-            #         "smartstack:https-redirect",
+            #         "smartstack:protocol:sni",
+            #         "smartstack:mode:tcp",
             #         "smartstack:external",
             #         "smartstack:routing:hostname",
             #         "smartstack:hostport:tcp:5349",
@@ -196,7 +162,7 @@ job "tuwunel-livekit" {
             #         timeout  = "5s"
             #     }
             # }
-
+            #
             # service {
             #     name     = "tuwunel-matrix-rtc-turn-udp"
             #     provider = "consul"
@@ -206,10 +172,8 @@ job "tuwunel-livekit" {
             #         "smartstack:protocol:udp",
             #         "smartstack:mode:udp",
             #         "smartstack:external",
-            #         "smartstack:routing:port",
             #         "smartstack:extport:3478",
             #         "smartstack:outport:udp:3478",
-            #         "smartstack:hostport:udp:3478",
             #         "smartstack:outport:udp:55000-56000",
             #         "smartstack:hostport:udp:55000-56000",
             #     ]
@@ -239,18 +203,19 @@ room:
     auto_create: false
 logging:
     level: debug
+    sample: true
 rtc:
+    #port_range_start: 56000
+    #port_range_end: 56010
     tcp_port: {{env "NOMAD_PORT_rtc_tcp"}}
-    udp_port: {{env "NOMAD_PORT_rtc_udp_00"}}
+    udp_port: 56000-56010
     use_external_ip: false
+    use_ice_lite: false
     node_ip: "${var.livekit_external_ipv4}"
     enable_loopback_candidate: false
-    # we need to ensure that udp packets going to Envoy, going to Livekit, come back on the internal network
-    # interface. Livekit has a habit of selecting the linklocak consul0 interface or similar when responding
-    # to STUN.
-    ips:
+    interfaces:
         includes:
-            - {{env "NOMAD_IP_rtc_udp_00"}}/32
+            - eth0
 keys:
 {{ with nomadVar "nomad/jobs/tuwunel/matrix-rtc" }}
     {{ .livekit_key }}: "{{ .livekit_secret }}"
@@ -260,7 +225,9 @@ turn:
     external_tls: true
     tls_port: 5349
     udp_port: 3478
-    domain: ${var.turn_server_hostname}
+    relay_range_start: 55000
+    relay_range_end: 55010
+    domain: ${var.matrix_rtc_hostname}  # ${var.turn_server_hostname}
 EOF
             }
 
