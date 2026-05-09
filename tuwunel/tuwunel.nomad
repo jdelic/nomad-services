@@ -198,6 +198,7 @@ EOF
             port     = "http"
             tags = [
                 "smartstack:hostname:${var.matrix_client_hostname}",
+                "smartstack:routing:hostname",
                 "smartstack:proxypath::/.well-known/matrix",
                 "smartstack:proxypath::/_matrix",
                 "smartstack:protocol:http",
@@ -221,6 +222,7 @@ EOF
             port     = "http"
             tags = [
                 "smartstack:hostname:${var.matrix_client_hostname}",
+                "smartstack:routing:hostname",
                 "smartstack:proxypath::/.well-known/matrix",
                 "smartstack:proxypath::/_matrix",
                 "smartstack:proxypath::/_tuwunel",
