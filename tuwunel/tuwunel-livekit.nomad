@@ -90,13 +90,14 @@ job "tuwunel-livekit" {
                     "smartstack:https-redirect",
                     "smartstack:mode:http",
                     "smartstack:external",
-                    "smartstack:outport:tcp:7880",
                     "smartstack:hostport:tcp:7880",
-                    "smartstack:outport:udp:19302",
                     "haproxy:backend:timeout:tunnel:1h",
                     "haproxy:backend:timeout:connect:30s",
-                    "haproxy:backend:timeout:client:5m",
                     "haproxy:backend:timeout:server:5m",
+                    "smartstack:cors:allow-origin:*",
+                    "smartstack:cors:allow-methods:GET,POST,PUT,DELETE,OPTIONS",
+                    "smartstack:cors:allow-headers:X-Requested-With,Content-Type,Authorization",
+                    "haproxy:backend:server-extra:proto h1",
                 ]
 
                 check {
@@ -200,18 +201,18 @@ port: {{env "NOMAD_PORT_ws"}}
 bind_addresses:
     - {{env "NOMAD_IP_ws"}}
 room:
-    auto_create: false
+    auto_create: true
 logging:
     level: debug
     sample: true
 rtc:
     #port_range_start: 56000
-    #port_range_end: 56010
+    #port_range_end: 56900
     tcp_port: {{env "NOMAD_PORT_rtc_tcp"}}
-    udp_port: 56000-56010
+    udp_port: 56000
     use_external_ip: false
     use_ice_lite: false
-    node_ip: "${var.livekit_external_ipv4}"
+    node_ip: "${var.livekit_external_ipv4},${var.livekit_external_ipv6}"
     enable_loopback_candidate: false
     interfaces:
         includes:
@@ -227,7 +228,11 @@ turn:
     udp_port: 3478
     relay_range_start: 55000
     relay_range_end: 55010
-    domain: ${var.matrix_rtc_hostname}  # ${var.turn_server_hostname}
+    domain: ${var.turn_server_hostname}
+    bind_addresses:
+        - {{env "NOMAD_IP_ws"}}
+        - ${var.livekit_external_ipv4}
+        - ${var.livekit_external_ipv6}
 EOF
             }
 
