@@ -8,7 +8,7 @@ plugin_id = "csi.hetzner.cloud"
 
 # Default minimum capacity for Hetzner Cloud is 10G. Tuwunel media benefits
 # from a bit of extra room even on a small deployment.
-capacity_min = "20G"
+capacity_min = "10G"
 
 capability {
     access_mode     = "single-node-writer"
