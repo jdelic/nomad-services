@@ -218,7 +218,7 @@ rtc:
         includes:
             - eth0
 keys:
-{{ with nomadVar "nomad/jobs/tuwunel/matrix-rtc" }}
+{{ with nomadVar "nomad/jobs/tuwunel-livekit/matrix-rtc" }}
     {{ .livekit_key }}: "{{ .livekit_secret }}"
 {{ end }}
 turn:
@@ -291,7 +291,7 @@ EOF
                 change_mode = "restart"
 
                 data = <<-EOF
-{{ with nomadVar "nomad/jobs/tuwunel/matrix-rtc" -}}
+{{ with nomadVar "nomad/jobs/tuwunel-livekit/matrix-rtc" -}}
 LIVEKIT_KEY={{ .livekit_key }}
 LIVEKIT_SECRET={{ .livekit_secret }}
 {{ end -}}
