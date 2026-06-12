@@ -37,10 +37,12 @@ job "tuwunel-livekit" {
 
             port "jwt" {
                 static = 8081
+                host_network = "default"
             }
 
             port "ws" {
                 static = 7880
+                host_network = "default"
             }
 
             port "rtc_tcp" {
@@ -187,7 +189,7 @@ job "tuwunel-livekit" {
             }
 
             config {
-                image = "livekit/livekit-server:v1.11.0"
+                image = "livekit/livekit-server:v1.13.1"
                 network_mode = "host"
                 args  = ["--config", "/local/livekit.yaml"]
             }
@@ -275,7 +277,7 @@ EOF
             }
 
             config {
-                image = "ghcr.io/element-hq/lk-jwt-service:0.4.4"
+                image = "ghcr.io/element-hq/lk-jwt-service:0.5.0"
                 network_mode = "host"
             }
 
