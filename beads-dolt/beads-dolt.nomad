@@ -45,28 +45,30 @@ job "beads-dolt" {
                 args = [
                     "-ec",
                     <<-EOS
-                    if [ ! -d "/dolt/git/ssh-phone-agent" ]; then
-                        echo "Initializing Dolt git remote..."
-                        mkdir -p /dolt/git/ssh-phone-agent
-                        cd /dolt/git/ssh-phone-agent
-                        apt update && apt install -y --no-install-recommends git
-                        git config --global --add safe.directory /dolt/git/ssh-phone-agent
-                        git init --bare -b main
-                        echo "Git remote initialized at /dolt/git/ssh-phone-agent"
-                        mkdir -p /dolt/tmp/
-                        cd /dolt/tmp/
-                        git clone /dolt/git/ssh-phone-agent
-                        git config --global --add safe.directory /dolt/tmp/ssh-phone-agent
-                        cd ssh-phone-agent
-                        git config user.name "Init"
-                        git config user.email "dolt-init@local"
-                        git commit --allow-empty -m "Initial commit"
-                        git push origin main
-                        cd ..
-                        rm -rf /dolt/tmp/ssh-phone-agent
-                    else
-                        echo "Git remote already initialized at /dolt/git/ssh-phone-agent"
-                    fi
+                    apt update && apt install -y --no-install-recommends git
+                    mkdir -p /dolt/tmp/
+                    for repo in ssh-phone-agent artifactsd; do
+                        if [ ! -d "/dolt/git/$repo" ]; then
+                            echo "Initializing Dolt git remote for $repo..."
+                            mkdir -p /dolt/git/$repo
+                            cd /dolt/git/$repo
+                            git config --global --add safe.directory /dolt/git/$repo
+                            git init --bare -b main
+                            echo "Git remote initialized at /dolt/git/$repo"
+                            cd /dolt/tmp
+                            git clone /dolt/git/$repo
+                            git config --global --add safe.directory /dolt/tmp/$repo
+                            cd $repo
+                            git config user.name "Init"
+                            git config user.email "dolt-init@local"
+                            git commit --allow-empty -m "Initial commit"
+                            git push origin main
+                            cd ..
+                            rm -rf /dolt/tmp/$repo
+                        else
+                            echo "Git remote already initialized at /dolt/git/$repo"
+                        fi
+                    done
                     chown -R 1000:1000 /dolt/git/
                     EOS
                 ]
@@ -215,28 +217,31 @@ EOF
                     "-ec",
                     <<-EOS
                     until mysqladmin ping -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED --silent; do sleep 2; done
-                    mysql -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED -u root -p"$ROOT_PASSWORD" <<SQL
+                    mysql -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED -u root <<SQL
                         DROP DATABASE IF EXISTS test;
                         CREATE DATABASE IF NOT EXISTS test;
-                        CREATE DATABASE IF NOT EXISTS ssh_phone_agent;
-
                         CREATE USER IF NOT EXISTS 'beads'@'%' IDENTIFIED BY '${BEADS_PASSWORD}';
                         ALTER USER 'beads'@'%' IDENTIFIED BY '${BEADS_PASSWORD}';
                         GRANT ALL PRIVILEGES ON test.* TO 'beads'@'%';
-                        GRANT ALL PRIVILEGES ON ssh_phone_agent.* TO 'beads'@'%';
-                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_push TO 'beads'@'%';
-                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_pull TO 'beads'@'%';
-                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_backup TO 'beads'@'%';
-                        GRANT EXECUTE ON PROCEDURE ssh_phone_agent.dolt_remote TO 'beads'@'%';
-                        USE ssh_phone_agent;
-                    SQL
+SQL
+                    for repo in ssh_phone_agent artifactsd; do
+                        mysql -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED -u root <<SQL
+                            CREATE DATABASE IF NOT EXISTS $repo;
 
-                    remote_exists=$(mysql -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED -u root -p"$ROOT_PASSWORD" -N -B -D ssh_phone_agent -e "SELECT COUNT(*) FROM dolt_remotes WHERE name = 'origin';")
-                    if [ "$remote_exists" = "0" ]; then
-                        mysql -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED -u root -p"$ROOT_PASSWORD" -D ssh_phone_agent -e "CALL dolt_remote('add', 'origin', 'file:///var/lib/dolt/git/ssh-phone-agent');"
-                    else
-                        echo "Dolt remote origin already exists"
-                    fi
+                            GRANT ALL PRIVILEGES ON $repo.* TO 'beads'@'%';
+                            GRANT EXECUTE ON PROCEDURE $repo.dolt_push TO 'beads'@'%';
+                            GRANT EXECUTE ON PROCEDURE $repo.dolt_pull TO 'beads'@'%';
+                            GRANT EXECUTE ON PROCEDURE $repo.dolt_backup TO 'beads'@'%';
+                            GRANT EXECUTE ON PROCEDURE $repo.dolt_remote TO 'beads'@'%';
+                            USE $repo;
+SQL
+                        remote_exists=$(mysql -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED -u root -N -B -D $repo -e "SELECT COUNT(*) FROM dolt_remotes WHERE name = 'origin';")
+                        if [ "$remote_exists" = "0" ]; then
+                            mysql -h 127.0.0.1 -P 3306 --ssl-mode=REQUIRED -u root -D $repo -e "CALL dolt_remote('add', 'origin', 'file:///var/lib/dolt/git/$repo');"
+                        else
+                            echo "Dolt remote origin ($repo) already exists"
+                        fi
+                    done
                     EOS
                 ]
             }
@@ -246,7 +251,7 @@ EOF
                 env         = true
                 change_mode = "restart"
                 data        = <<-EOF
-ROOT_PASSWORD={{ with nomadVar "nomad/jobs/beads-dolt/db" }}{{ .root_password }}{{ end }}
+MYSQL_PWD={{ with nomadVar "nomad/jobs/beads-dolt/db" }}{{ .root_password }}{{ end }}
 BEADS_PASSWORD={{ with nomadVar "nomad/jobs/beads-dolt/db" }}{{ .beads_password }}{{ end }}
 EOF
             }
