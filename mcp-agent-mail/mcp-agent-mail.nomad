@@ -101,7 +101,8 @@ job "mcp-agent-mail" {
             driver = "docker"
 
             config {
-                image = "registry.${var.domain}/agent-tools/mcp_agent_mail:2026.06.12"
+                image = "registry.${var.domain}/agent-tools/mcp_agent_mail:2026.06.22"
+
                 ports = ["http"]
 
                 auth {
