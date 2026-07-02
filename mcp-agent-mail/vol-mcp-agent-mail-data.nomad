@@ -20,5 +20,5 @@ mount_options {
 }
 
 secrets {
-    "encryption-passphrase" = "GMQQF0z2s2v1qBD0gDkzRlX6"
+    "encryption-passphrase" = "${ENCRYPTION_PASSPHRASE}"
 }
