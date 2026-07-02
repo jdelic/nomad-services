@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat >&2 <<'EOF'
+Usage:
+  create-volume [--register] <volume-file.nomad>
+
+Options:
+  --register   Register/update an existing CSI volume instead of creating it.
+EOF
+  exit 2
+}
+
+cleanup() {
+  unset ENCRYPTION_PASSPHRASE
+  stty echo 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+mode="create"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --register)
+      mode="register"
+      shift
+      ;;
+    -h|--help)
+      usage
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      echo "error: unknown option: $1" >&2
+      usage
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+[[ $# -eq 1 ]] || usage
+
+volume_file="$1"
+
+if [[ ! -f "$volume_file" ]]; then
+  echo "error: volume file not found: $volume_file" >&2
+  exit 1
+fi
+
+if ! command -v nomad >/dev/null 2>&1; then
+  echo "error: nomad CLI not found" >&2
+  exit 1
+fi
+
+if ! command -v envsubst >/dev/null 2>&1; then
+  echo "error: envsubst not found. Install gettext-base on Debian:" >&2
+  echo "  sudo apt install gettext-base" >&2
+  exit 1
+fi
+
+printf "Encryption passphrase: " >&2
+stty -echo
+IFS= read -r ENCRYPTION_PASSPHRASE
+stty echo
+printf "\n" >&2
+
+if [[ -z "$ENCRYPTION_PASSPHRASE" ]]; then
+  echo "error: empty passphrase refused" >&2
+  exit 1
+fi
+
+export ENCRYPTION_PASSPHRASE
+
+case "$mode" in
+  create)
+    envsubst '${ENCRYPTION_PASSPHRASE}' < "$volume_file" \
+      | nomad volume create -
+    ;;
+  register)
+    envsubst '${ENCRYPTION_PASSPHRASE}' < "$volume_file" \
+      | nomad volume register -
+    ;;
+esac

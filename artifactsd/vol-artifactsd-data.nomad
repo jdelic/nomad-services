@@ -1,9 +1,5 @@
 # file: db-vol.hcl
 
-variable "encryption_passphrase" {
-    type = string
-}
-
 type      = "csi"
 id        = "artifactsd-data"
 name      = "artifactsd-data"
@@ -24,5 +20,5 @@ mount_options {
 }
 
 secrets {
-    "encryption-passphrase" = "${var.encryption_passphrase}"
+    "encryption-passphrase" = "${ENCRYPTION_PASSPHRASE}"
 }
