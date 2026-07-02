@@ -52,7 +52,7 @@ job "artifactsd" {
       driver = "docker"
 
       config {
-        image = "registry.maurusnet.test/agent-tools/artifactsd:latest"
+        image = "registry.${var.domain}/agent-tools/artifactsd:latest"
         ports = ["http"]
 
         #mounts = [
