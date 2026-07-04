@@ -109,26 +109,32 @@ job "artifactsd" {
                 read_only     = true
             }
 
-            env {
-                # Required: the public URL clients use to reach this server.
-                ARTIFACTSD_BASE_URL = "https://artifacts.${var.domain}"
-                ARTIFACTSD_LISTEN     = ":8080"
-                ARTIFACTSD_DATA_DIR = "/data"
+            template {
+                destination = "${NOMAD_SECRETS_DIR}/.env"
+                env         = true
+                change_mode = "restart"
 
-                # TLS: set to "acme" and configure ARTIFACTSD_ACME_DOMAINS /
-                # ARTIFACTSD_ACME_EMAIL if this allocation terminates TLS directly.
-                # Leave "off" when a Nomad ingress gateway or external proxy handles it.
-                ARTIFACTSD_TLS = "off"
+                data        = <<-EOS
+# Required: the public URL clients use to reach this server.
+ARTIFACTSD_BASE_URL = "https://artifacts.${var.domain}"
+ARTIFACTSD_LISTEN     = ":8080"
+ARTIFACTSD_DATA_DIR = "/data"
 
-                # Bootstrap token: seeds the first admin-scoped API token on first
-                # boot. Replace "change-me" with a random value (e.g. `openssl rand
-                # -hex 32`) and remove this line once you have created a real token.
-                ARTIFACTSD_BOOTSTRAP_TOKEN = "${var.admin_token}"
+# TLS: set to "acme" and configure ARTIFACTSD_ACME_DOMAINS /
+# ARTIFACTSD_ACME_EMAIL if this allocation terminates TLS directly.
+# Leave "off" when a Nomad ingress gateway or external proxy handles it.
+ARTIFACTSD_TLS = "off"
 
-                ARTIFACTSD_OIDC_ISSUER = "https://auth.${var.domain}/o2"
-                ARTIFACTSD_OIDC_CLIENT_ID = "artifactsd"
-                ARTIFACTSD_OIDC_CLIENT_SECRET = "7vim4o8WvekDQSG9w59oFY1mdGFVAYz6h5g2kYTt0BYhjkcWNkZE0XDqSrckUFOaTk9KI5atmOBI8byPzImFHNaEsG6fBCXr2UKMlzgjJGLcjFNPGnT7qQIJuMRmQRxt"
-                ARTIFACTSD_ADMIN_GROUP = "*"
+# Bootstrap token: seeds the first admin-scoped API token on first
+# boot. Replace "change-me" with a random value (e.g. `openssl rand
+# -hex 32`) and remove this line once you have created a real token.
+ARTIFACTSD_BOOTSTRAP_TOKEN = "${var.admin_token}"
+
+ARTIFACTSD_OIDC_ISSUER = "https://auth.${var.domain}/o2"
+ARTIFACTSD_OIDC_CLIENT_ID = "{{ with nomadVar "nomad/jobs/artifactsd/oidc" }}{{ .client_id }}{{ end }}"
+ARTIFACTSD_OIDC_CLIENT_SECRET = "{{ with nomadVar "nomad/jobs/artifactsd/oidc" }}{{ .client_secret }}{{ end }}"
+ARTIFACTSD_ADMIN_GROUP = "*"
+EOS
             }
 
             resources {
