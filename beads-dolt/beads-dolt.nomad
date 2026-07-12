@@ -103,7 +103,7 @@ job "beads-dolt" {
                     },
                     {
                         type     = "bind"
-                        source   = "/etc/ssl/local/wildcard-combined.crt"
+                        source   = "/etc/ssl/combined/wildcard-combined.crt"
                         target   = "/etc/ssl/certs/wildcard-combined.crt"
                         readonly = true
                     },
