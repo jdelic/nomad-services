@@ -1,14 +1,10 @@
 # Required plain Nomad vars:
 #
-#   cal_diy_hostname
-#     Public hostname for the scheduling UI.
+#   domain
+#     Public domain for the scheduling UI (schedule.[domain]).
 #
 #   cal_diy_image
 #     Open-source cal.diy Docker image to run. Pin this for production.
-#
-#   postgres_host, postgres_port, postgres_database, postgres_user
-#     Existing PostgreSQL service to use. The hcloud environment provides this
-#     through postgresql.local; this job does not schedule PostgreSQL.
 #
 #   redis_url
 #     Existing Redis service to use. The hcloud environment provides this
@@ -20,12 +16,12 @@
 #     nextauth_secret, calendso_encryption_key
 #
 #   nomad/jobs/cal.diy/db
-#     postgres_password
+#     host, port, database, user, password
 
-variable "cal_diy_hostname" {
+variable "domain" {
   type        = string
-  description = "Public hostname for the cal.diy scheduling UI."
-  default     = "schedule.maurus.net"
+  description = "Public domain name for the cal.diy scheduling UI (schedule.[domain])."
+  default     = "maurus.net"
 }
 
 variable "cal_diy_image" {
@@ -105,7 +101,7 @@ job "cal-diy" {
       }
 
       config {
-        image   = "alpine:3.20"
+        image   = "debian:trixie-slim"
         command = "sh"
         args = [
           "-ec",
@@ -134,7 +130,7 @@ EOF
       provider = "consul"
       port     = "web"
       tags = [
-        "smartstack:hostname:${var.cal_diy_hostname}",
+        "smartstack:hostname:schedule.${var.domain}",
         "smartstack:routing:hostname",
         "smartstack:protocol:https",
         "smartstack:https-redirect",
@@ -160,12 +156,8 @@ EOF
       }
 
       env {
-        NEXT_PUBLIC_WEBAPP_URL      = "https://${var.cal_diy_hostname}"
-        NEXTAUTH_URL                = "https://${var.cal_diy_hostname}"
-        DATABASE_HOST               = "${var.postgres_host}"
-        DATABASE_PORT               = "${var.postgres_port}"
-        DATABASE_NAME               = "${var.postgres_database}"
-        DATABASE_USER               = "${var.postgres_user}"
+        NEXT_PUBLIC_WEBAPP_URL      = "https://schedule.${var.domain}"
+        NEXTAUTH_URL                = "https://schedule.${var.domain}"
         REDIS_URL                   = "${var.redis_url}"
         CALCOM_TELEMETRY_DISABLED   = "1"
         NEXT_PUBLIC_LICENSE_CONSENT = "agree"
@@ -179,8 +171,8 @@ EOF
         change_mode = "restart"
 
         data = <<-EOF
-DATABASE_URL=postgresql://${var.postgres_user}:{{ with nomadVar "nomad/jobs/cal.diy/db" }}{{ .postgres_password }}{{ end }}@${var.postgres_host}:${var.postgres_port}/${var.postgres_database}
-DATABASE_DIRECT_URL=postgresql://${var.postgres_user}:{{ with nomadVar "nomad/jobs/cal.diy/db" }}{{ .postgres_password }}{{ end }}@${var.postgres_host}:${var.postgres_port}/${var.postgres_database}
+DATABASE_URL={{ with nomadVar "nomad/jobs/cal.diy/db" }}postgresql://{{ .user }}:{{ .password }}@{{ .host }}:{{ .port }}/{{ .database }}{{ end }}
+DATABASE_DIRECT_URL={{ with nomadVar "nomad/jobs/cal.diy/db" }}postgresql://{{ .user }}:{{ .password }}@{{ .host }}:{{ .port }}/{{ .database }}{{ end }}
 NEXTAUTH_SECRET={{ with nomadVar "nomad/jobs/cal.diy/app" }}{{ .nextauth_secret }}{{ end }}
 CALENDSO_ENCRYPTION_KEY={{ with nomadVar "nomad/jobs/cal.diy/app" }}{{ .calendso_encryption_key }}{{ end }}
 EOF
