@@ -64,51 +64,10 @@ job "caldiy" {
       mode     = "delay"
     }
 
-    volume "uploads" {
-      type            = "csi"
-      source          = "caldiy-uploads"
-      access_mode     = "single-node-writer"
-      attachment_mode = "file-system"
-      read_only       = false
-    }
-
     volume "host-ca-bundle" {
       type      = "host" 
       source    = "host-ca-bundle"
       read_only = true
-    }
-
-    task "init-uploads" {
-      driver = "docker"
-
-      lifecycle {
-        hook    = "prestart"
-        sidecar = false
-      }
-
-      config {
-        image   = "debian:trixie-slim"
-        command = "sh"
-        args = [
-          "-ec",
-          <<-EOF
-mkdir -p /uploads
-chown -R 1000:1000 /uploads
-chmod 0750 /uploads
-EOF
-        ]
-      }
-
-      volume_mount {
-        volume      = "uploads"
-        destination = "/uploads"
-        read_only   = false
-      }
-
-      resources {
-        cpu    = 50
-        memory = 64
-      }
     }
 
     service {
@@ -170,12 +129,6 @@ DATABASE_DIRECT_URL={{ with nomadVar "nomad/jobs/caldiy/db" }}postgresql://{{ .u
 NEXTAUTH_SECRET={{ with nomadVar "nomad/jobs/caldiy/app" }}{{ .nextauth_secret }}{{ end }}
 CALENDSO_ENCRYPTION_KEY={{ with nomadVar "nomad/jobs/caldiy/app" }}{{ .calendso_encryption_key }}{{ end }}
 EOF
-      }
-
-      volume_mount {
-        volume      = "uploads"
-        destination = "/uploads"
-        read_only   = false
       }
 
       resources {
