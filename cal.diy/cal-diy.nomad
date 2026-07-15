@@ -156,7 +156,7 @@ EOF
         NODE_ENV                    = "production"
         PORT                        = "3000"
         NODE_EXTRA_CA_CERTS         = "/etc/ssl/certs/ca-certificates.crt"
-        TURBO_ENV_MODE              = "loose"
+        TURBO_ENV_MODE              = "loose"  # this will stop Turbo from filtering out NODE_EXTRA_CA_CERTS
       }
 
       template {
