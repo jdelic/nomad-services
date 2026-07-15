@@ -12,10 +12,10 @@
 #
 # Required secret Nomad vars:
 #
-#   nomad/jobs/cal.diy/app
+#   nomad/jobs/caldiy/app
 #     nextauth_secret, calendso_encryption_key
 #
-#   nomad/jobs/cal.diy/db
+#   nomad/jobs/caldiy/db
 #     host, port, database, user, password
 
 variable "domain" {
@@ -27,40 +27,16 @@ variable "domain" {
 variable "cal_diy_image" {
   type        = string
   description = "Open-source cal.diy web Docker image. Pin in production."
-  default     = "calcom/cal.diy:latest"
-}
-
-variable "postgres_host" {
-  type        = string
-  description = "Existing PostgreSQL hostname."
-  default     = "postgresql.local"
-}
-
-variable "postgres_port" {
-  type        = string
-  description = "Existing PostgreSQL port."
-  default     = "5432"
-}
-
-variable "postgres_database" {
-  type        = string
-  description = "PostgreSQL database name for cal.diy."
-  default     = "caldiy"
-}
-
-variable "postgres_user" {
-  type        = string
-  description = "PostgreSQL user for cal.diy."
-  default     = "caldiy"
+  default     = "calcom/cal.com:latest"
 }
 
 variable "redis_url" {
   type        = string
   description = "Existing Redis URL."
-  default     = "redis://redis.local:6379"
+  default     = "redis://redis.service.consul:6379"
 }
 
-job "cal-diy" {
+job "caldiy" {
   datacenters = ["RZ19", "vagrant"]
   type        = "service"
 
@@ -75,6 +51,10 @@ job "cal-diy" {
       port "web" {
         to = 3000
       }
+
+      dns {
+        servers = ["169.254.1.1"]
+      }
     }
 
     restart {
@@ -86,10 +66,16 @@ job "cal-diy" {
 
     volume "uploads" {
       type            = "csi"
-      source          = "cal-diy-uploads"
+      source          = "caldiy-uploads"
       access_mode     = "single-node-writer"
       attachment_mode = "file-system"
       read_only       = false
+    }
+
+    volume "host-ca-bundle" {
+      type      = "host" 
+      source    = "host-ca-bundle"
+      read_only = true
     }
 
     task "init-uploads" {
@@ -155,6 +141,12 @@ EOF
         ports = ["web"]
       }
 
+      volume_mount {
+        volume      = "host-ca-bundle"
+        destination = "/etc/ssl/certs/ca-certificates.crt"
+        read_only   = true
+      }
+
       env {
         NEXT_PUBLIC_WEBAPP_URL      = "https://schedule.${var.domain}"
         NEXTAUTH_URL                = "https://schedule.${var.domain}"
@@ -163,6 +155,8 @@ EOF
         NEXT_PUBLIC_LICENSE_CONSENT = "agree"
         NODE_ENV                    = "production"
         PORT                        = "3000"
+        NODE_EXTRA_CA_CERTS         = "/etc/ssl/certs/ca-certificates.crt"
+        TURBO_ENV_MODE              = "loose"
       }
 
       template {
@@ -171,10 +165,10 @@ EOF
         change_mode = "restart"
 
         data = <<-EOF
-DATABASE_URL={{ with nomadVar "nomad/jobs/cal.diy/db" }}postgresql://{{ .user }}:{{ .password }}@{{ .host }}:{{ .port }}/{{ .database }}{{ end }}
-DATABASE_DIRECT_URL={{ with nomadVar "nomad/jobs/cal.diy/db" }}postgresql://{{ .user }}:{{ .password }}@{{ .host }}:{{ .port }}/{{ .database }}{{ end }}
-NEXTAUTH_SECRET={{ with nomadVar "nomad/jobs/cal.diy/app" }}{{ .nextauth_secret }}{{ end }}
-CALENDSO_ENCRYPTION_KEY={{ with nomadVar "nomad/jobs/cal.diy/app" }}{{ .calendso_encryption_key }}{{ end }}
+DATABASE_URL={{ with nomadVar "nomad/jobs/caldiy/db" }}postgresql://{{ .user }}:{{ .password }}@{{ .host }}:{{ .port }}/{{ .database }}{{ end }}
+DATABASE_DIRECT_URL={{ with nomadVar "nomad/jobs/caldiy/db" }}postgresql://{{ .user }}:{{ .password }}@{{ .host }}:{{ .port }}/{{ .database }}{{ end }}
+NEXTAUTH_SECRET={{ with nomadVar "nomad/jobs/caldiy/app" }}{{ .nextauth_secret }}{{ end }}
+CALENDSO_ENCRYPTION_KEY={{ with nomadVar "nomad/jobs/caldiy/app" }}{{ .calendso_encryption_key }}{{ end }}
 EOF
       }
 
