@@ -7,7 +7,6 @@ and Redis are expected to exist outside Nomad at `postgresql.local` and
 ## Files
 
 - `cal-diy.nomad`: cal.diy web task and smartstack exposure.
-- `vol-cal-diy-uploads.nomad`: CSI volume for uploaded files.
 
 ## Public hostnames
 
@@ -23,7 +22,7 @@ DNS can be created out-of-band.
 The cal.diy web task defaults to the official open-source Docker image:
 
 ```text
-calcom/cal.diy:latest
+calcom/cal.com:latest
 ```
 
 ## External dependencies
@@ -61,19 +60,4 @@ nomad var put nomad/jobs/cal.diy/db \
 ```
 
 cal.diy includes a CalDAV calendar integration. After first-run setup, connect
-Radicale through the cal.diy UI with `https://cal.maurus.net` and your Radicale
-username/password so booking availability reflects that calendar.
-
-## Volumes
-
-Register the uploads volume before running the job:
-
-```bash
-nomad volume register cal.diy/vol-cal-diy-uploads.nomad
-```
-
-Then run:
-
-```bash
-nomad job run cal.diy/cal-diy.nomad
-```
+CalDAV through the cal.diy UI.
