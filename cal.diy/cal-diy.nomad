@@ -116,6 +116,8 @@ job "caldiy" {
         PORT                        = "3000"
         NODE_EXTRA_CA_CERTS         = "/etc/ssl/certs/ca-certificates.crt"
         TURBO_ENV_MODE              = "loose"  # this will stop Turbo from filtering out NODE_EXTRA_CA_CERTS
+        EMAIL_FROM                  = "noreply@maurus.net"
+        EMAIL_SERVER_HOST           = "mail-smtp.service.consul"
       }
 
       template {
