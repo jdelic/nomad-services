@@ -10,7 +10,7 @@ job "hcloud-csi-node" {
 
             config {
                 # Get the latest version on https://hub.docker.com/r/hetznercloud/hcloud-csi-driver/tags
-                image      = "hetznercloud/hcloud-csi-driver:v2.19.0"
+                image      = "hetznercloud/hcloud-csi-driver:v2.23.0"
                 args       = [ "-node" ]
                 privileged = true
             }
