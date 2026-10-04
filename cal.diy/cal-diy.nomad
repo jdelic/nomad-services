@@ -157,8 +157,8 @@ job "caldiy" {
         PORT                        = "3000"
         NODE_EXTRA_CA_CERTS         = "/etc/ssl/certs/ca-certificates.crt"
         TURBO_ENV_MODE              = "loose"  # this will stop Turbo from filtering out NODE_EXTRA_CA_CERTS
-        EMAIL_SERVER_HOST           = "mail-smtp.service.consul"
-        EMAIL_SERVER_PORT           = "25"
+        EMAIL_SERVER_HOST           = "smtp.maurus.net"
+        EMAIL_SERVER_PORT           = "465"
         EMAIL_FROM                  = "noreply@maurus.net"
       }
 
@@ -177,6 +177,8 @@ DATABASE_URL={{ with nomadVar "nomad/jobs/caldiy/db" }}postgresql://{{ .user }}:
 DATABASE_DIRECT_URL={{ with nomadVar "nomad/jobs/caldiy/db" }}postgresql://{{ .user }}:{{ .password }}@{{ .host }}:{{ .port }}/{{ .database }}{{ end }}
 NEXTAUTH_SECRET={{ with nomadVar "nomad/jobs/caldiy/app" }}{{ .nextauth_secret }}{{ end }}
 CALENDSO_ENCRYPTION_KEY={{ with nomadVar "nomad/jobs/caldiy/app" }}{{ .calendso_encryption_key }}{{ end }}
+EMAIL_SERVER_USER={{ with nomadVar "nomad/jobs/caldiy/email" }}{{ .user }}{{ end}}
+EMAIL_SERVER_PASSWORD={{ with nomadVar "nomad/jobs/caldiy/email" }}{{ .password }}{{ end }}
 EOF
       }
 

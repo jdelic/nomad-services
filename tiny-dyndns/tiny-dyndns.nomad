@@ -53,7 +53,8 @@ job "tiny-dyndns" {
                 # section in README.md for the full variable list.
                 DYNDNS_ZONE_NAME  = "kameter.maurus.net"
                 DYNDNS_NS_RECORDS = "dyndns.maurus.net.,nsb7.schlundtech.de."
-                DYNDNS_SOA_MNAME = "dyndns.maurus.net."
+                DYNDNS_SOA_MNAME  = "dyndns.maurus.net."
+                DYNDNS_WILDCARD   = true
 
                 # /local is Nomad's per-task ephemeral disk; it's mounted read-write
                 # automatically regardless of readonly_rootfs, so no volume
@@ -67,8 +68,8 @@ job "tiny-dyndns" {
                 DYNDNS_TRUST_PROXY_HEADERS = "true"
                 # Host networking: the updater must bind the advertised static port.
                 DYNDNS_LISTEN_ADDR = ":${NOMAD_PORT_http}"
-                NSD_LISTEN_ADDR = "${NOMAD_IP_dns}@${NOMAD_PORT_dns},${NOMAD_IP_dnsv6}@${NOMAD_PORT_dnsv6}"
-                NSD_VERBOSITY = "2"
+                NSD_LISTEN_ADDR    = "${NOMAD_IP_dns}@${NOMAD_PORT_dns},${NOMAD_IP_dnsv6}@${NOMAD_PORT_dnsv6}"
+                NSD_VERBOSITY      = "2"
             }
 
             template {
