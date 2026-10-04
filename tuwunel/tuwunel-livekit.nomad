@@ -189,7 +189,7 @@ job "tuwunel-livekit" {
             }
 
             config {
-                image = "livekit/livekit-server:v1.13.1"
+                image = "livekit/livekit-server:v1.13.7"
                 network_mode = "host"
                 args  = ["--config", "/local/livekit.yaml"]
             }
