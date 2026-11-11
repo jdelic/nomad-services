@@ -1,7 +1,3 @@
-variable "registry_password" {
-    type = string
-}
-
 variable "bearer_token" {
     type = string
 }
@@ -92,7 +88,9 @@ job "mcp-agent-mail" {
 
             check_restart {
                 limit           = 3
-                grace           = "45s"
+                # generous grace: the first start on a legacy (Python) database runs
+                # the in-place schema migration before the server becomes ready.
+                grace           = "120s"
                 ignore_warnings = false
             }
         }
@@ -101,26 +99,34 @@ job "mcp-agent-mail" {
             driver = "docker"
 
             config {
-                image = "registry.${var.domain}/agent-tools/mcp_agent_mail:2026.06.22"
+                # Rust rewrite: https://github.com/Dicklesworthstone/mcp_agent_mail_rust
+                # Image entrypoint is `tini -- mcp-agent-mail serve --no-tui`, runs as uid 10001.
+                image = "ghcr.io/dicklesworthstone/mcp_agent_mail_rust:0.3.40"
 
                 ports = ["http"]
-
-                auth {
-                    server_address = "registry.${var.domain}"
-                    username       = "nomad-deploy@${var.domain}"
-                    password       = var.registry_password
-                }
-                #force_pull = true
             }
 
             env {
+                # Same DB file + storage root as the old Python deployment. On first start
+                # the Rust server migrates the legacy schema in place (irreversible), so
+                # snapshot the volume before the first deploy.
                 DATABASE_URL                       = "sqlite+aiosqlite:////data/mailbox/storage.sqlite3"
+                STORAGE_ROOT                       = "/data/mailbox"
                 HTTP_HOST                          = "0.0.0.0"
                 HTTP_PORT                          = "8765"
-                HTTP_RBAC_ENABLED                  = false
-                STORAGE_ROOT                       = "/data/mailbox"
+                # /api/ and /mcp/ are accepted interchangeably; /api/ matches the edge config.
+                HTTP_PATH                          = "/api/"
+                # The server rejects unknown Host headers with 421. Allow the public hostname
+                # (nginx forwards $host) and the node IP (Nomad health checks use IP:port).
+                HTTP_ALLOWED_HOSTS                 = "mcp-mail.${var.domain},${NOMAD_IP_http}"
+                # Defense in depth: the server enforces the same token as the edge, so the
+                # dynamic host port is not open without auth. The edge injects it for /mail.
+                HTTP_BEARER_TOKEN                  = var.bearer_token
+                HTTP_RBAC_ENABLED                  = "false"
+                TUI_ENABLED                        = "false"
                 TOOL_METRICS_EMIT_ENABLED          = "true"
                 TOOL_METRICS_EMIT_INTERVAL_SECONDS = "120"
+                RUST_LOG                           = "info"
             }
 
             volume_mount {
@@ -175,6 +181,11 @@ job "mcp-agent-mail" {
                             inactive=5m
                             use_temp_path=off;
 
+                        map $http_upgrade $connection_upgrade {
+                            default upgrade;
+                            ''      close;
+                        }
+
                         upstream app_upstream {
                             {{- range nomadService "mcp-agent-mail" }}
                             server {{ .Address }}:{{ .Port }};
@@ -199,6 +210,8 @@ job "mcp-agent-mail" {
                                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                                 proxy_set_header X-Forwarded-Proto https;
                                 proxy_set_header X-Real-IP $remote_addr;
+                                proxy_http_version 1.1;
+                                proxy_buffering off;
 
                                 proxy_pass http://app_upstream;
                             }
@@ -212,6 +225,8 @@ job "mcp-agent-mail" {
                                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                                 proxy_set_header X-Forwarded-Proto https;
                                 proxy_set_header X-Real-IP $remote_addr;
+                                proxy_http_version 1.1;
+                                proxy_buffering off;
 
                                 proxy_pass http://app_upstream;
                             }
@@ -225,10 +240,16 @@ job "mcp-agent-mail" {
 
                                 auth_request /_auth;
 
+                                # Basic auth was verified above; the app itself expects the bearer token.
+                                proxy_set_header Authorization "Bearer ${var.bearer_token}";
                                 proxy_set_header Host $host;
                                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                                 proxy_set_header X-Forwarded-Proto https;
                                 proxy_set_header X-Real-IP $remote_addr;
+                                # the /mail UI uses websockets (/mail/ws-state, /mail/ws-input)
+                                proxy_http_version 1.1;
+                                proxy_set_header Upgrade $http_upgrade;
+                                proxy_set_header Connection $connection_upgrade;
 
                                 proxy_pass http://app_upstream;
                             }
