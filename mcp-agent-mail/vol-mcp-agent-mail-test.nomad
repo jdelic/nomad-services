@@ -4,21 +4,13 @@ type      = "csi"
 id        = "mcp-agent-mail-data"
 name      = "mcp-agent-mail-data"
 namespace = "default"
-plugin_id = "rocketduck-nfs"
+# local disk, not NFS: the Rust server needs renameat2(RENAME_NOREPLACE),
+# hard-link counts and file ownership to behave like a local filesystem.
+plugin_id = "csi-hostpath"
+
+capacity_min = "10G"
 
 capability {
     access_mode     = "single-node-writer"
     attachment_mode = "file-system"
-}
-
-mount_options {
-    fs_type     = "ext4"
-    mount_flags = ["discard", "defaults"]
-}
-
-parameters {
-    # set volume directory user/group/perms (optional)
-    uid  = "1000" # vagrant
-    gid  = "1000"
-    mode = "770"
 }

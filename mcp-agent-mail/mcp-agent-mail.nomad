@@ -38,8 +38,9 @@ job "mcp-agent-mail" {
         }
 
         # we fix the permissions on cloud volumes so they work with actual block device volumes.
-        # On test systems where we run NFS with all_squash, anonuid=1000, anongid=1000, this is a
-        # noop.
+        # On test systems where we run NFS with all_squash, anonuid=1000, anongid=1000, the NFS
+        # server refuses the chown to any uid other than 1000 (EPERM). Every client uid is squashed
+        # to the volume owner there anyway, so instead we verify that uid 10001 can write.
         task "fix-mailbox-perms" {
             driver = "docker"
 
@@ -55,8 +56,14 @@ job "mcp-agent-mail" {
                     "-ec",
                     <<-EOF
                         mkdir -p /data/mailbox
-                        chown -R 10001:10001 /data/mailbox
-                        chmod 0750 /data/mailbox
+                        if chown -R 10001:10001 /data/mailbox 2>/dev/null; then
+                            chmod 0750 /data/mailbox
+                        else
+                            echo "chown refused (NFS with all_squash?), checking that uid 10001 can write"
+                            adduser -D -H -u 10001 mailbox
+                            su mailbox -s /bin/sh -c 'touch /data/mailbox/.write-probe && rm /data/mailbox/.write-probe'
+                            echo "uid 10001 can write to /data/mailbox"
+                        fi
                     EOF
                 ]
             }
@@ -153,7 +160,8 @@ job "mcp-agent-mail" {
             driver = "docker"
 
             config {
-                image = "nginx:1.27-alpine"
+                # 1.27 is EOL (tag frozen at 1.27.5); 1.30.7 has the 2026-11-18 security fixes
+                image = "nginx:1.30.7-alpine"
                 ports = ["http"]
 
                 # Use the rendered config directly.
